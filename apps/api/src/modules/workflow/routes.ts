@@ -1,16 +1,5 @@
-﻿import type { FastifyInstance } from "fastify";
-import {
-  addFileToNode,
-  createConnection,
-  createNode,
-  deleteConnection,
-  deleteFile,
-  deleteNode,
-  findConnectionIdByPair,
-  findFile,
-  listWorkflow,
-  updateNode,
-} from "../../core/workflow-store";
+import type { FastifyInstance } from "fastify";
+import { repositories } from "../../core/repository";
 
 interface NodePayload {
   title?: string;
@@ -29,7 +18,7 @@ interface ConnectionPayload {
 export async function registerWorkflowRoutes(app: FastifyInstance) {
   app.get("/api/workflow", async (request) => {
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const workflow = listWorkflow(userId);
+    const workflow = repositories.workflow.list(userId);
 
     return {
       nodes: workflow.nodes.map((node) => ({
@@ -50,7 +39,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
 
   app.post<{ Body: NodePayload }>("/api/workflow/nodes", async (request, reply) => {
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const node = createNode(userId, {
+    const node = repositories.workflow.createNode(userId, {
       title: request.body?.title ?? "새 노드",
       content: request.body?.content ?? "",
       x: request.body?.x ?? 200,
@@ -71,7 +60,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     if (request.body?.x !== undefined) payload.x = request.body.x;
     if (request.body?.y !== undefined) payload.y = request.body.y;
 
-    const updated = updateNode(userId, nodeId, payload);
+    const updated = repositories.workflow.updateNode(userId, nodeId, payload);
 
     if (!updated) return reply.code(404).send({ message: "노드를 찾을 수 없습니다." });
     return { message: "ok" };
@@ -82,7 +71,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const deleted = deleteNode(userId, nodeId);
+    const deleted = repositories.workflow.deleteNode(userId, nodeId);
     if (!deleted) return reply.code(404).send({ message: "노드를 찾을 수 없습니다." });
 
     return reply.code(204).send();
@@ -97,7 +86,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     }
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const connection = createConnection(userId, {
+    const connection = repositories.workflow.createConnection(userId, {
       from,
       to,
       fromAnchor: request.body?.fromAnchor ?? "right",
@@ -121,12 +110,12 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
           return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
         }
 
-        const found = findConnectionIdByPair(userId, from, to);
+        const found = repositories.workflow.findConnectionIdByPair(userId, from, to);
         if (!found) return reply.code(404).send({ message: "연결을 찾을 수 없습니다." });
         id = found;
       }
 
-      const deleted = deleteConnection(userId, id);
+      const deleted = repositories.workflow.deleteConnection(userId, id);
       if (!deleted) return reply.code(404).send({ message: "연결을 찾을 수 없습니다." });
 
       return reply.code(204).send();
@@ -142,7 +131,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
 
     const buffer = await part.toBuffer();
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const file = addFileToNode(userId, nodeId, {
+    const file = repositories.workflow.addFileToNode(userId, nodeId, {
       fileName: part.filename,
       contentType: part.mimetype,
       buffer,
@@ -157,7 +146,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 파일 ID가 아닙니다." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const file = findFile(userId, id);
+    const file = repositories.workflow.findFile(userId, id);
     if (!file) return reply.code(404).send({ message: "파일을 찾을 수 없습니다." });
 
     reply.header("Content-Type", file.contentType || "application/octet-stream");
@@ -170,7 +159,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 파일 ID가 아닙니다." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const deleted = deleteFile(userId, id);
+    const deleted = repositories.workflow.deleteFile(userId, id);
     if (!deleted) return reply.code(404).send({ message: "파일을 찾을 수 없습니다." });
 
     return reply.code(204).send();

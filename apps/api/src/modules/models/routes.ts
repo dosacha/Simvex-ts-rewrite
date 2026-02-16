@@ -8,7 +8,7 @@ import {
   getCatalogStore,
   gradeExam,
 } from "../../core/catalog";
-import { createMemo, listMemos } from "../../core/session-store";
+import { repositories } from "../../core/repository";
 
 export async function registerModelRoutes(app: FastifyInstance) {
   app.get("/api/models", async () => getCatalogStore().models);
@@ -82,7 +82,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    return listMemos(userId, id);
+    return repositories.memo.listByModel(userId, id);
   });
 
   app.post<{ Params: { id: string }; Body: { title?: string; content?: string } }>(
@@ -95,7 +95,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
       if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
 
       const userId = String(request.headers["x-user-id"] ?? "default-guest");
-      const memo = createMemo(userId, id, {
+      const memo = repositories.memo.create(userId, id, {
         title: request.body?.title ?? "",
         content: request.body?.content ?? "",
       });
