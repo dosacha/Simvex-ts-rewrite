@@ -60,6 +60,12 @@ export interface WorkflowRepository {
   deleteFile(userId: string, fileId: number): boolean;
 }
 
+export interface AppRepositories {
+  memo: MemoRepository;
+  aiHistory: AiHistoryRepository;
+  workflow: WorkflowRepository;
+}
+
 interface PersistedWorkflowFile {
   id: number;
   fileName: string;
@@ -459,16 +465,23 @@ class RepositoryWorkflow implements WorkflowRepository {
   }
 }
 
-function createRepositoryDataStore(): RepositoryDataStore {
-  const configuredPath = process.env.SIMVEX_REPOSITORY_FILE?.trim();
-  const filePath = configuredPath ? path.resolve(configuredPath) : null;
+function createRepositoryDataStore(filePath: string | null): RepositoryDataStore {
   return new RepositoryDataStore(filePath);
 }
 
-const dataStore = createRepositoryDataStore();
+export function createRepositories(options?: { filePath?: string | null }): AppRepositories {
+  const envFilePath = process.env.SIMVEX_REPOSITORY_FILE?.trim();
+  const resolvedFilePath =
+    options?.filePath !== undefined
+      ? options.filePath
+      : (envFilePath ? path.resolve(envFilePath) : null);
 
-export const repositories = {
-  memo: new RepositoryMemo(dataStore),
-  aiHistory: new RepositoryAiHistory(dataStore),
-  workflow: new RepositoryWorkflow(dataStore),
-};
+  const dataStore = createRepositoryDataStore(resolvedFilePath ?? null);
+  return {
+    memo: new RepositoryMemo(dataStore),
+    aiHistory: new RepositoryAiHistory(dataStore),
+    workflow: new RepositoryWorkflow(dataStore),
+  };
+}
+
+export const repositories = createRepositories();
