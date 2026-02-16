@@ -47,8 +47,10 @@ export function updateMemo(userId: UserId, memoId: number, payload: Pick<MemoIte
   for (const list of byModel.values()) {
     const idx = list.findIndex((item) => item.id === memoId);
     if (idx < 0) continue;
+    const current = list[idx];
+    if (!current) continue;
 
-    const updated: MemoItem = { ...list[idx], ...payload };
+    const updated: MemoItem = { ...current, ...payload };
     list[idx] = updated;
     return updated;
   }

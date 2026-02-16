@@ -57,8 +57,12 @@ test("buildStudyCatalog: fixture import file is parsed into catalog", () => {
 
   const catalog = buildStudyCatalog("engineering-dict");
   assert.equal(catalog.categories.length, 1);
-  assert.equal(catalog.categories[0].models.length, 1);
-  assert.equal(catalog.categories[0].models[0].title, "Engine_Block");
+  const category = catalog.categories[0];
+  assert.ok(category);
+  assert.equal(category.models.length, 1);
+  const firstModel = category.models[0];
+  assert.ok(firstModel);
+  assert.equal(firstModel.title, "Engine_Block");
 });
 
 test("generateExamQuestions: answer field is not exposed", () => {

@@ -65,12 +65,13 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const updated = updateNode(userId, nodeId, {
-      title: request.body?.title,
-      content: request.body?.content,
-      x: request.body?.x,
-      y: request.body?.y,
-    });
+    const payload: NodePayload = {};
+    if (request.body?.title !== undefined) payload.title = request.body.title;
+    if (request.body?.content !== undefined) payload.content = request.body.content;
+    if (request.body?.x !== undefined) payload.x = request.body.x;
+    if (request.body?.y !== undefined) payload.y = request.body.y;
+
+    const updated = updateNode(userId, nodeId, payload);
 
     if (!updated) return reply.code(404).send({ message: "노드를 찾을 수 없습니다." });
     return { message: "ok" };

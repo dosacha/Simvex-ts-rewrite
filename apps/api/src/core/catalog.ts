@@ -126,11 +126,11 @@ function buildStore(): CatalogStore {
       id: modelId,
       title,
       modelUrl,
-      description: raw.description,
       domainKey: DOMAIN_KEY,
       categoryKey: CATEGORY_KEY,
       slug: slugify(title),
     };
+    if (raw.description !== undefined) model.description = raw.description;
     models.push(model);
 
     const parts: PartSummary[] = (raw.assets ?? []).map((asset) => {
@@ -184,10 +184,10 @@ function buildStore(): CatalogStore {
           id: quizId++,
           question,
           options,
-          explanation: item.explanation,
           modelTitle: title,
           modelId,
         };
+        if (item.explanation !== undefined) quiz.explanation = item.explanation;
 
         answerByQuizId.set(quiz.id, answer);
         return quiz;
