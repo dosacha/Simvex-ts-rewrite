@@ -1,10 +1,9 @@
 ﻿import type { FastifyInstance } from "fastify";
-import { buildStudyBundle, buildStudyCatalog, getCatalogStore } from "../../core/catalog";
+import { DEFAULT_DOMAIN_KEY, buildStudyBundle, buildStudyCatalog, getCatalogStore } from "../../core/catalog";
 
 export async function registerStudyRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { domain?: string } }>("/api/study/catalog", async (request, reply) => {
-    const domainKey = request.query.domain?.trim();
-    if (!domainKey) return reply.code(400).send({ message: "domain 쿼리 파라미터가 필요합니다." });
+    const domainKey = request.query.domain?.trim() || DEFAULT_DOMAIN_KEY;
 
     return buildStudyCatalog(domainKey);
   });

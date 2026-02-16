@@ -44,7 +44,7 @@ interface CatalogStore {
   answerByQuizId: Map<number, number>;
 }
 
-const DOMAIN_KEY = "engineering-dict";
+export const DEFAULT_DOMAIN_KEY = "engineering-dict";
 const CATEGORY_KEY = "mechanics";
 const DEFAULT_IMPORT_DIR = path.resolve(
   process.cwd(),
@@ -126,7 +126,7 @@ function buildStore(): CatalogStore {
       id: modelId,
       title,
       modelUrl,
-      domainKey: DOMAIN_KEY,
+      domainKey: DEFAULT_DOMAIN_KEY,
       categoryKey: CATEGORY_KEY,
       slug: slugify(title),
     };

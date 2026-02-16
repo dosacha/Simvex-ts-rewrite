@@ -221,7 +221,7 @@ export function WorkflowPage() {
       <ul>
         {connections.map((connection) => (
           <li key={connection.id}>
-            #{connection.id}: {connection.from} -> {connection.to}
+            #{connection.id}: {connection.from} {"->"} {connection.to}
             <button type="button" onClick={() => void removeConnection(connection.id)}>
               연결 삭제
             </button>

@@ -24,7 +24,8 @@ export function ExamPage() {
       })
       .then((data) => {
         setModels(data);
-        if (data.length > 0) setSelectedModelIds([data[0].id]);
+        const first = data[0];
+        if (first) setSelectedModelIds([first.id]);
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
