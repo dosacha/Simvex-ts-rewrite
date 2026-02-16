@@ -1,6 +1,15 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
-import type { ModelSummary, PartSummary, StudyBundle, StudyCatalog } from "@simvex/shared";
+import type {
+  ExamQuestion,
+  ExamResultItem,
+  ExamSubmitItem,
+  ModelSummary,
+  PartSummary,
+  QuizItem,
+  StudyBundle,
+  StudyCatalog,
+} from "@simvex/shared";
 
 interface RawAssetItem {
   id?: string;
@@ -11,15 +20,28 @@ interface RawAssetItem {
   explodeVector?: { x?: number; y?: number; z?: number };
 }
 
+interface RawQuizItem {
+  q?: string;
+  question?: string;
+  opts?: string[];
+  options?: string[];
+  ans?: number;
+  answer?: number;
+  explanation?: string;
+}
+
 interface RawImportFile {
   integrated_file?: string;
   description?: string;
   assets?: RawAssetItem[];
+  quizzes?: RawQuizItem[];
 }
 
 interface CatalogStore {
   models: ModelSummary[];
   partsByModelId: Map<number, PartSummary[]>;
+  quizzesByModelId: Map<number, QuizItem[]>;
+  answerByQuizId: Map<number, number>;
 }
 
 const DOMAIN_KEY = "engineering-dict";
@@ -73,9 +95,12 @@ function buildStore(): CatalogStore {
 
   const models: ModelSummary[] = [];
   const partsByModelId = new Map<number, PartSummary[]>();
+  const quizzesByModelId = new Map<number, QuizItem[]>();
+  const answerByQuizId = new Map<number, number>();
 
   let modelId = 1;
   let partId = 1;
+  let quizId = 1;
 
   for (const fileName of files) {
     const filePath = path.join(IMPORT_DIR, fileName);
@@ -136,11 +161,34 @@ function buildStore(): CatalogStore {
       return part;
     });
 
+    const quizzes: QuizItem[] = (raw.quizzes ?? [])
+      .map((item) => {
+        const question = item.q ?? item.question ?? "";
+        const options = item.opts ?? item.options ?? [];
+        const answer = asNumber(item.ans ?? item.answer);
+
+        if (!question.trim() || !Array.isArray(options) || options.length < 2) return null;
+
+        const quiz: QuizItem = {
+          id: quizId++,
+          question,
+          options,
+          explanation: item.explanation,
+          modelTitle: title,
+          modelId,
+        };
+
+        answerByQuizId.set(quiz.id, answer);
+        return quiz;
+      })
+      .filter((item): item is QuizItem => item !== null);
+
     partsByModelId.set(modelId, parts);
+    quizzesByModelId.set(modelId, quizzes);
     modelId += 1;
   }
 
-  return { models, partsByModelId };
+  return { models, partsByModelId, quizzesByModelId, answerByQuizId };
 }
 
 export function getCatalogStore(): CatalogStore {
@@ -156,6 +204,55 @@ export function findModelById(id: number): ModelSummary | undefined {
 
 export function findPartsByModelId(id: number): PartSummary[] {
   return getCatalogStore().partsByModelId.get(id) ?? [];
+}
+
+export function findQuizzesByModelId(id: number): QuizItem[] {
+  return getCatalogStore().quizzesByModelId.get(id) ?? [];
+}
+
+export function generateExamQuestions(modelIds: number[], count = 20): ExamQuestion[] {
+  const questions = modelIds.flatMap((modelId) => findQuizzesByModelId(modelId));
+  const shuffled = [...questions].sort(() => Math.random() - 0.5).slice(0, count);
+
+  return shuffled.map((item) => ({
+    id: item.id,
+    question: item.question,
+    options: item.options,
+    modelId: item.modelId ?? 0,
+    modelTitle: item.modelTitle ?? "Unknown",
+  }));
+}
+
+export function gradeExam(answers: ExamSubmitItem[]): { correctCount: number; total: number; results: ExamResultItem[] } {
+  const answerMap = getCatalogStore().answerByQuizId;
+  const quizMap = new Map<number, QuizItem>();
+  for (const quizzes of getCatalogStore().quizzesByModelId.values()) {
+    for (const quiz of quizzes) quizMap.set(quiz.id, quiz);
+  }
+
+  const results: ExamResultItem[] = answers
+    .map((item) => {
+      const answer = answerMap.get(item.questionId);
+      const quiz = quizMap.get(item.questionId);
+      if (answer === undefined || !quiz) return null;
+
+      return {
+        questionId: item.questionId,
+        selected: item.selected,
+        answer,
+        correct: item.selected === answer,
+        modelId: quiz.modelId ?? 0,
+        modelTitle: quiz.modelTitle ?? "Unknown",
+      };
+    })
+    .filter((item): item is ExamResultItem => item !== null);
+
+  const correctCount = results.filter((item) => item.correct).length;
+  return {
+    correctCount,
+    total: results.length,
+    results,
+  };
 }
 
 export function buildStudyCatalog(domainKey: string): StudyCatalog {

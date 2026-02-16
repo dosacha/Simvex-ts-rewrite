@@ -37,6 +37,7 @@ export interface QuizItem {
   answer?: number;
   explanation?: string;
   modelTitle?: string;
+  modelId?: number;
 }
 
 export interface MemoItem {
@@ -79,4 +80,37 @@ export interface StudyCatalog {
 export interface StudyBundle {
   model: ModelSummary;
   parts: PartSummary[];
+}
+
+export interface ExamQuestion {
+  id: number;
+  question: string;
+  options: string[];
+  modelId: number;
+  modelTitle: string;
+}
+
+export interface ExamSubmitItem {
+  questionId: number;
+  selected: number | null;
+}
+
+export interface ExamSubmitRequest {
+  answers: ExamSubmitItem[];
+}
+
+export interface ExamResultItem {
+  questionId: number;
+  correct: boolean;
+  selected: number | null;
+  answer: number;
+  modelId: number;
+  modelTitle: string;
+}
+
+export interface ExamResultResponse {
+  total: number;
+  correctCount: number;
+  score: number;
+  results: ExamResultItem[];
 }
