@@ -16,4 +16,11 @@
 
 ## 현재 상태
 - 프로젝트 골격 생성 완료
-- 다음 단계: API 계약/도메인 타입을 먼저 고정 후 구현
+- API repository 계층 분리 완료 (in-memory 기본 동작)
+- 선택적으로 파일 영속화 지원 추가
+
+## API 저장소 모드
+- 기본: in-memory
+- 파일 영속화 사용 시:
+  - 환경변수 `SIMVEX_REPOSITORY_FILE`에 JSON 파일 경로를 설정함.
+  - 예시(Windows PowerShell): `$env:SIMVEX_REPOSITORY_FILE='C:\\data\\simvex-repo.json'`
