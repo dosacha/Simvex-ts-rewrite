@@ -46,10 +46,21 @@ interface CatalogStore {
 
 const DOMAIN_KEY = "engineering-dict";
 const CATEGORY_KEY = "mechanics";
-const IMPORT_DIR = path.resolve(process.cwd(), "..", "..", "..", "simvex-api-main", "src", "main", "resources", "import");
+const DEFAULT_IMPORT_DIR = path.resolve(
+  process.cwd(),
+  "..",
+  "..",
+  "..",
+  "simvex-api-main",
+  "src",
+  "main",
+  "resources",
+  "import",
+);
 const ASSET_BASE = "/assets/3d";
 
 let cachedStore: CatalogStore | null = null;
+let importDir = process.env.SIMVEX_IMPORT_DIR ? path.resolve(process.env.SIMVEX_IMPORT_DIR) : DEFAULT_IMPORT_DIR;
 
 function slugify(input: string): string {
   return input
@@ -88,7 +99,7 @@ function asNumber(value: unknown): number {
 
 function buildStore(): CatalogStore {
   const files = fs
-    .readdirSync(IMPORT_DIR, { withFileTypes: true })
+    .readdirSync(importDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && /^Data_.*\.json$/i.test(entry.name))
     .map((entry) => entry.name)
     .sort((a, b) => a.localeCompare(b));
@@ -103,7 +114,7 @@ function buildStore(): CatalogStore {
   let quizId = 1;
 
   for (const fileName of files) {
-    const filePath = path.join(IMPORT_DIR, fileName);
+    const filePath = path.join(importDir, fileName);
     const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as RawImportFile;
 
     const title = deriveModelTitle(fileName, raw.integrated_file);
@@ -196,6 +207,11 @@ export function getCatalogStore(): CatalogStore {
     cachedStore = buildStore();
   }
   return cachedStore;
+}
+
+export function setCatalogImportDir(nextImportDir: string): void {
+  importDir = path.resolve(nextImportDir);
+  cachedStore = null;
 }
 
 export function findModelById(id: number): ModelSummary | undefined {
