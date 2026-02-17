@@ -35,6 +35,7 @@
   - 예시: `$env:DATABASE_URL='postgres://user:pass@localhost:5432/simvex'`
   - 버전 마이그레이션 파일: `apps/api/db/migrations/*.sql`
   - 마이그레이션 이력: `schema_migrations` 테이블로 관리함.
+  - 제약조건/FK 보강 기준: `003_constraints.sql`
   - 마이그레이션 실행: `npm run migrate -w @simvex/api`
 
 ## 로컬 Postgres 개발 흐름

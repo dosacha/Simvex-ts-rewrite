@@ -12,12 +12,9 @@ test(
   async () => {
     const pool = new Pool({ connectionString: databaseUrl, allowExitOnIdle: true });
     await runPostgresMigrations(pool);
-    await pool.query("DELETE FROM workflow_files");
-    await pool.query("DELETE FROM workflow_connections");
     await pool.query("DELETE FROM workflow_nodes");
     await pool.query("DELETE FROM ai_histories");
     await pool.query("DELETE FROM memos");
-    await pool.end();
 
     const repos = createPostgresRepositories({ databaseUrl: databaseUrl! });
 
@@ -45,6 +42,15 @@ test(
     });
     assert.ok(conn);
 
+    const duplicate = await repos.workflow.createConnection("pg-user", {
+      from: nodeA.id,
+      to: nodeB.id,
+      fromAnchor: "right",
+      toAnchor: "left",
+    });
+    assert.ok(duplicate);
+    assert.equal(duplicate.id, conn.id);
+
     const file = await repos.workflow.addFileToNode("pg-user", nodeA.id, {
       fileName: "pg.txt",
       contentType: "text/plain",
@@ -60,5 +66,43 @@ test(
     const fileFound = await repos.workflow.findFile("pg-user", file.id);
     assert.ok(fileFound);
     assert.equal(fileFound.buffer.toString("utf-8"), "hello-pg");
+
+    const byPair = await repos.workflow.findConnectionIdByPair("pg-user", nodeA.id, nodeB.id);
+    assert.equal(byPair, conn.id);
+
+    await pool.end();
+  },
+);
+
+test(
+  "postgres migrations: workflow FK 제약이 등록됨",
+  { skip: !databaseUrl || "DATABASE_URL 또는 POSTGRES_URL이 없어 skip 함." },
+  async () => {
+    const pool = new Pool({ connectionString: databaseUrl, allowExitOnIdle: true });
+    await runPostgresMigrations(pool);
+
+    const constraints = await pool.query<{ conname: string }>(`
+      SELECT conname
+      FROM pg_constraint
+      WHERE conname IN (
+        'fk_workflow_connections_from_node',
+        'fk_workflow_connections_to_node',
+        'fk_workflow_files_node',
+        'chk_workflow_connections_not_self',
+        'uq_workflow_connections_user_edge_anchor'
+      )
+      ORDER BY conname
+    `);
+
+    const names = constraints.rows.map((row) => row.conname);
+    assert.deepEqual(names, [
+      "chk_workflow_connections_not_self",
+      "fk_workflow_connections_from_node",
+      "fk_workflow_connections_to_node",
+      "fk_workflow_files_node",
+      "uq_workflow_connections_user_edge_anchor",
+    ]);
+
+    await pool.end();
   },
 );
