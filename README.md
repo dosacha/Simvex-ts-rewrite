@@ -20,7 +20,17 @@
 - 선택적으로 파일 영속화 지원 추가
 
 ## API 저장소 모드
-- 기본: in-memory
-- 파일 영속화 사용 시:
+- 지원 드라이버:
+  - `memory` (기본)
+  - `file`
+  - `postgres`
+- 드라이버 선택:
+  - 환경변수 `SIMVEX_REPOSITORY_DRIVER`를 사용함.
+  - 예시: `$env:SIMVEX_REPOSITORY_DRIVER='postgres'`
+- 파일 영속화(`file`) 사용 시:
   - 환경변수 `SIMVEX_REPOSITORY_FILE`에 JSON 파일 경로를 설정함.
   - 예시(Windows PowerShell): `$env:SIMVEX_REPOSITORY_FILE='C:\\data\\simvex-repo.json'`
+- PostgreSQL(`postgres`) 사용 시:
+  - 환경변수 `DATABASE_URL` 또는 `POSTGRES_URL`을 설정함.
+  - 예시: `$env:DATABASE_URL='postgres://user:pass@localhost:5432/simvex'`
+  - 초기 스키마 기준 파일: `apps/api/db/migrations/001_init.sql`

@@ -1,17 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { AiHistoryItem, MemoItem } from "@simvex/shared";
+import { createPostgresRepositories } from "./repository-postgres";
 
 export interface MemoRepository {
-  listByModel(userId: string, modelId: number): MemoItem[];
-  create(userId: string, modelId: number, payload: Pick<MemoItem, "title" | "content">): MemoItem;
-  update(userId: string, memoId: number, payload: Pick<MemoItem, "title" | "content">): MemoItem | null;
-  delete(userId: string, memoId: number): boolean;
+  listByModel(userId: string, modelId: number): Promise<MemoItem[]>;
+  create(userId: string, modelId: number, payload: Pick<MemoItem, "title" | "content">): Promise<MemoItem>;
+  update(userId: string, memoId: number, payload: Pick<MemoItem, "title" | "content">): Promise<MemoItem | null>;
+  delete(userId: string, memoId: number): Promise<boolean>;
 }
 
 export interface AiHistoryRepository {
-  listByModel(userId: string, modelId: number): AiHistoryItem[];
-  append(userId: string, modelId: number, item: Omit<AiHistoryItem, "timestamp">): AiHistoryItem;
+  listByModel(userId: string, modelId: number): Promise<AiHistoryItem[]>;
+  append(userId: string, modelId: number, item: Omit<AiHistoryItem, "timestamp">): Promise<AiHistoryItem>;
 }
 
 export interface WorkflowFile {
@@ -44,20 +45,24 @@ export interface WorkflowState {
 }
 
 export interface WorkflowRepository {
-  list(userId: string): WorkflowState;
-  createNode(userId: string, payload: Pick<WorkflowNode, "title" | "content" | "x" | "y">): WorkflowNode;
+  list(userId: string): Promise<WorkflowState>;
+  createNode(userId: string, payload: Pick<WorkflowNode, "title" | "content" | "x" | "y">): Promise<WorkflowNode>;
   updateNode(
     userId: string,
     nodeId: number,
     payload: Partial<Pick<WorkflowNode, "title" | "content" | "x" | "y">>,
-  ): WorkflowNode | null;
-  deleteNode(userId: string, nodeId: number): boolean;
-  createConnection(userId: string, payload: Omit<WorkflowConnection, "id">): WorkflowConnection | null;
-  deleteConnection(userId: string, connectionId: number): boolean;
-  findConnectionIdByPair(userId: string, from: number, to: number): number | null;
-  addFileToNode(userId: string, nodeId: number, payload: Pick<WorkflowFile, "fileName" | "contentType" | "buffer">): WorkflowFile | null;
-  findFile(userId: string, fileId: number): WorkflowFile | null;
-  deleteFile(userId: string, fileId: number): boolean;
+  ): Promise<WorkflowNode | null>;
+  deleteNode(userId: string, nodeId: number): Promise<boolean>;
+  createConnection(userId: string, payload: Omit<WorkflowConnection, "id">): Promise<WorkflowConnection | null>;
+  deleteConnection(userId: string, connectionId: number): Promise<boolean>;
+  findConnectionIdByPair(userId: string, from: number, to: number): Promise<number | null>;
+  addFileToNode(
+    userId: string,
+    nodeId: number,
+    payload: Pick<WorkflowFile, "fileName" | "contentType" | "buffer">,
+  ): Promise<WorkflowFile | null>;
+  findFile(userId: string, fileId: number): Promise<WorkflowFile | null>;
+  deleteFile(userId: string, fileId: number): Promise<boolean>;
 }
 
 export interface AppRepositories {
@@ -106,6 +111,8 @@ interface PersistedRepositoryDataState {
   historyStore: Record<string, Record<string, AiHistoryItem[]>>;
   workflowStore: Record<string, PersistedWorkflowState>;
 }
+
+type RepositoryDriver = "memory" | "file" | "postgres";
 
 function createInitialState(): RepositoryDataState {
   return {
@@ -214,7 +221,7 @@ class RepositoryDataStore {
   }
 }
 
-class RepositoryMemo implements MemoRepository {
+class InMemoryMemoRepository implements MemoRepository {
   constructor(private readonly store: RepositoryDataStore) {}
 
   private ensureBucket(userId: string, modelId: number): MemoItem[] {
@@ -227,11 +234,11 @@ class RepositoryMemo implements MemoRepository {
     return list;
   }
 
-  listByModel(userId: string, modelId: number): MemoItem[] {
+  async listByModel(userId: string, modelId: number): Promise<MemoItem[]> {
     return this.ensureBucket(userId, modelId).map((item) => ({ ...item }));
   }
 
-  create(userId: string, modelId: number, payload: Pick<MemoItem, "title" | "content">): MemoItem {
+  async create(userId: string, modelId: number, payload: Pick<MemoItem, "title" | "content">): Promise<MemoItem> {
     const list = this.ensureBucket(userId, modelId);
     const created: MemoItem = {
       id: this.store.state.memoIdSeq++,
@@ -243,7 +250,7 @@ class RepositoryMemo implements MemoRepository {
     return created;
   }
 
-  update(userId: string, memoId: number, payload: Pick<MemoItem, "title" | "content">): MemoItem | null {
+  async update(userId: string, memoId: number, payload: Pick<MemoItem, "title" | "content">): Promise<MemoItem | null> {
     const byUser = this.store.state.memoStore[userId];
     if (!byUser) return null;
 
@@ -266,7 +273,7 @@ class RepositoryMemo implements MemoRepository {
     return null;
   }
 
-  delete(userId: string, memoId: number): boolean {
+  async delete(userId: string, memoId: number): Promise<boolean> {
     const byUser = this.store.state.memoStore[userId];
     if (!byUser) return false;
 
@@ -286,7 +293,7 @@ class RepositoryMemo implements MemoRepository {
   }
 }
 
-class RepositoryAiHistory implements AiHistoryRepository {
+class InMemoryAiHistoryRepository implements AiHistoryRepository {
   constructor(private readonly store: RepositoryDataStore) {}
 
   private ensureBucket(userId: string, modelId: number): AiHistoryItem[] {
@@ -299,11 +306,11 @@ class RepositoryAiHistory implements AiHistoryRepository {
     return list;
   }
 
-  listByModel(userId: string, modelId: number): AiHistoryItem[] {
+  async listByModel(userId: string, modelId: number): Promise<AiHistoryItem[]> {
     return this.ensureBucket(userId, modelId).map((item) => ({ ...item }));
   }
 
-  append(userId: string, modelId: number, item: Omit<AiHistoryItem, "timestamp">): AiHistoryItem {
+  async append(userId: string, modelId: number, item: Omit<AiHistoryItem, "timestamp">): Promise<AiHistoryItem> {
     const list = this.ensureBucket(userId, modelId);
     const created: AiHistoryItem = {
       ...item,
@@ -315,7 +322,7 @@ class RepositoryAiHistory implements AiHistoryRepository {
   }
 }
 
-class RepositoryWorkflow implements WorkflowRepository {
+class InMemoryWorkflowRepository implements WorkflowRepository {
   constructor(private readonly store: RepositoryDataStore) {}
 
   private ensureState(userId: string): WorkflowState {
@@ -327,7 +334,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     return created;
   }
 
-  list(userId: string): WorkflowState {
+  async list(userId: string): Promise<WorkflowState> {
     const state = this.ensureState(userId);
     return {
       nodes: state.nodes.map((node) => ({
@@ -338,7 +345,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     };
   }
 
-  createNode(userId: string, payload: Pick<WorkflowNode, "title" | "content" | "x" | "y">): WorkflowNode {
+  async createNode(userId: string, payload: Pick<WorkflowNode, "title" | "content" | "x" | "y">): Promise<WorkflowNode> {
     const state = this.ensureState(userId);
     const created: WorkflowNode = {
       id: this.store.state.nodeIdSeq++,
@@ -353,11 +360,11 @@ class RepositoryWorkflow implements WorkflowRepository {
     return created;
   }
 
-  updateNode(
+  async updateNode(
     userId: string,
     nodeId: number,
     payload: Partial<Pick<WorkflowNode, "title" | "content" | "x" | "y">>,
-  ): WorkflowNode | null {
+  ): Promise<WorkflowNode | null> {
     const state = this.ensureState(userId);
     const node = state.nodes.find((item) => item.id === nodeId);
     if (!node) return null;
@@ -371,7 +378,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     return node;
   }
 
-  deleteNode(userId: string, nodeId: number): boolean {
+  async deleteNode(userId: string, nodeId: number): Promise<boolean> {
     const state = this.ensureState(userId);
     const prevLength = state.nodes.length;
     state.nodes = state.nodes.filter((node) => node.id !== nodeId);
@@ -382,7 +389,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     return true;
   }
 
-  createConnection(userId: string, payload: Omit<WorkflowConnection, "id">): WorkflowConnection | null {
+  async createConnection(userId: string, payload: Omit<WorkflowConnection, "id">): Promise<WorkflowConnection | null> {
     const state = this.ensureState(userId);
     const fromExists = state.nodes.some((node) => node.id === payload.from);
     const toExists = state.nodes.some((node) => node.id === payload.to);
@@ -406,7 +413,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     return created;
   }
 
-  deleteConnection(userId: string, connectionId: number): boolean {
+  async deleteConnection(userId: string, connectionId: number): Promise<boolean> {
     const state = this.ensureState(userId);
     const prevLength = state.connections.length;
     state.connections = state.connections.filter((connection) => connection.id !== connectionId);
@@ -416,17 +423,17 @@ class RepositoryWorkflow implements WorkflowRepository {
     return true;
   }
 
-  findConnectionIdByPair(userId: string, from: number, to: number): number | null {
+  async findConnectionIdByPair(userId: string, from: number, to: number): Promise<number | null> {
     const state = this.ensureState(userId);
     const found = state.connections.find((connection) => connection.from === from && connection.to === to);
     return found?.id ?? null;
   }
 
-  addFileToNode(
+  async addFileToNode(
     userId: string,
     nodeId: number,
     payload: Pick<WorkflowFile, "fileName" | "contentType" | "buffer">,
-  ): WorkflowFile | null {
+  ): Promise<WorkflowFile | null> {
     const state = this.ensureState(userId);
     const node = state.nodes.find((item) => item.id === nodeId);
     if (!node) return null;
@@ -442,7 +449,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     return file;
   }
 
-  findFile(userId: string, fileId: number): WorkflowFile | null {
+  async findFile(userId: string, fileId: number): Promise<WorkflowFile | null> {
     const state = this.ensureState(userId);
     for (const node of state.nodes) {
       const found = node.files.find((file) => file.id === fileId);
@@ -451,7 +458,7 @@ class RepositoryWorkflow implements WorkflowRepository {
     return null;
   }
 
-  deleteFile(userId: string, fileId: number): boolean {
+  async deleteFile(userId: string, fileId: number): Promise<boolean> {
     const state = this.ensureState(userId);
     for (const node of state.nodes) {
       const prevLength = node.files.length;
@@ -469,19 +476,43 @@ function createRepositoryDataStore(filePath: string | null): RepositoryDataStore
   return new RepositoryDataStore(filePath);
 }
 
-export function createRepositories(options?: { filePath?: string | null }): AppRepositories {
-  const envFilePath = process.env.SIMVEX_REPOSITORY_FILE?.trim();
-  const resolvedFilePath =
-    options?.filePath !== undefined
-      ? options.filePath
-      : (envFilePath ? path.resolve(envFilePath) : null);
-
-  const dataStore = createRepositoryDataStore(resolvedFilePath ?? null);
+function createInMemoryRepositories(filePath: string | null): AppRepositories {
+  const dataStore = createRepositoryDataStore(filePath);
   return {
-    memo: new RepositoryMemo(dataStore),
-    aiHistory: new RepositoryAiHistory(dataStore),
-    workflow: new RepositoryWorkflow(dataStore),
+    memo: new InMemoryMemoRepository(dataStore),
+    aiHistory: new InMemoryAiHistoryRepository(dataStore),
+    workflow: new InMemoryWorkflowRepository(dataStore),
   };
+}
+
+function resolveDriver(options?: { driver?: RepositoryDriver }): RepositoryDriver {
+  if (options?.driver) return options.driver;
+
+  const envDriver = process.env.SIMVEX_REPOSITORY_DRIVER?.trim().toLowerCase();
+  if (envDriver === "postgres") return "postgres";
+  if (envDriver === "file") return "file";
+  return "memory";
+}
+
+function resolveFilePath(options?: { filePath?: string | null }): string | null {
+  if (options?.filePath !== undefined) return options.filePath;
+
+  const envFilePath = process.env.SIMVEX_REPOSITORY_FILE?.trim();
+  return envFilePath ? path.resolve(envFilePath) : null;
+}
+
+export function createRepositories(options?: {
+  driver?: RepositoryDriver;
+  filePath?: string | null;
+  databaseUrl?: string | null;
+}): AppRepositories {
+  const driver = resolveDriver(options);
+  if (driver === "postgres") {
+    return createPostgresRepositories({ databaseUrl: options?.databaseUrl ?? process.env.DATABASE_URL ?? null });
+  }
+
+  const filePath = driver === "file" ? resolveFilePath(options) : null;
+  return createInMemoryRepositories(filePath);
 }
 
 export const repositories = createRepositories();

@@ -19,7 +19,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
     if (!model) return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    return repositories.aiHistory.listByModel(userId, modelId);
+    return await repositories.aiHistory.listByModel(userId, modelId);
   });
 
   app.post<{ Body: AiAskRequest }>("/api/ai/ask", async (request, reply) => {
@@ -62,7 +62,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
 
     const answer = buildAnswer(question, model.title, part?.meshName);
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    repositories.aiHistory.append(userId, modelId, { question, answer });
+    await repositories.aiHistory.append(userId, modelId, { question, answer });
 
     return {
       answer,

@@ -82,7 +82,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
 
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    return repositories.memo.listByModel(userId, id);
+    return await repositories.memo.listByModel(userId, id);
   });
 
   app.post<{ Params: { id: string }; Body: { title?: string; content?: string } }>(
@@ -95,7 +95,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
       if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
 
       const userId = String(request.headers["x-user-id"] ?? "default-guest");
-      const memo = repositories.memo.create(userId, id, {
+      const memo = await repositories.memo.create(userId, id, {
         title: request.body?.title ?? "",
         content: request.body?.content ?? "",
       });
