@@ -33,7 +33,8 @@
 - PostgreSQL(`postgres`) 사용 시:
   - 환경변수 `DATABASE_URL` 또는 `POSTGRES_URL`을 설정함.
   - 예시: `$env:DATABASE_URL='postgres://user:pass@localhost:5432/simvex'`
-  - 초기 스키마 기준 파일: `apps/api/db/migrations/001_init.sql`
+  - 버전 마이그레이션 파일: `apps/api/db/migrations/*.sql`
+  - 마이그레이션 이력: `schema_migrations` 테이블로 관리함.
   - 마이그레이션 실행: `npm run migrate -w @simvex/api`
 
 ## 로컬 Postgres 개발 흐름

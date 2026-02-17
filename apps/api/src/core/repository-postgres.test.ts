@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Pool } from "pg";
 import { createPostgresRepositories } from "./repository-postgres";
-import { ensurePostgresSchema } from "./postgres-schema";
+import { runPostgresMigrations } from "./postgres-migrations";
 
 const databaseUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
 
@@ -11,7 +11,7 @@ test(
   { skip: !databaseUrl || "DATABASE_URL 또는 POSTGRES_URL이 없어 skip 함." },
   async () => {
     const pool = new Pool({ connectionString: databaseUrl, allowExitOnIdle: true });
-    await ensurePostgresSchema(pool);
+    await runPostgresMigrations(pool);
     await pool.query("DELETE FROM workflow_files");
     await pool.query("DELETE FROM workflow_connections");
     await pool.query("DELETE FROM workflow_nodes");

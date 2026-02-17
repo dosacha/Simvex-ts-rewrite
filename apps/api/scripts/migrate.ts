@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { ensurePostgresSchema } from "../src/core/postgres-schema";
+import { runPostgresMigrations } from "../src/core/postgres-migrations";
 
 async function runMigrate() {
   const databaseUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
@@ -9,8 +9,12 @@ async function runMigrate() {
 
   const pool = new Pool({ connectionString: databaseUrl });
   try {
-    await ensurePostgresSchema(pool);
-    console.log("PostgreSQL migration 완료함.");
+    const applied = await runPostgresMigrations(pool);
+    if (applied.length === 0) {
+      console.log("적용할 마이그레이션 없음.");
+    } else {
+      console.log(`적용된 마이그레이션: ${applied.join(", ")}`);
+    }
   } finally {
     await pool.end();
   }

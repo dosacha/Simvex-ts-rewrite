@@ -1,6 +1,6 @@
 import { Pool, type QueryResultRow } from "pg";
 import type { AiHistoryItem, MemoItem } from "@simvex/shared";
-import { ensurePostgresSchema } from "./postgres-schema";
+import { runPostgresMigrations } from "./postgres-migrations";
 import type {
   AppRepositories,
   AiHistoryRepository,
@@ -52,7 +52,7 @@ class PostgresStore {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = (async () => {
-      await ensurePostgresSchema(this.pool);
+      await runPostgresMigrations(this.pool);
     })();
 
     return this.initPromise;
