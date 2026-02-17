@@ -30,6 +30,10 @@
 6. `npm run typecheck -w @simvex/web`
 7. `docs/DEPLOYMENT_ENV_TEMPLATE.md` 기준으로 stage/prod 환경변수 최종 확인
 
+## 스테이징 리허설
+- 통합 실행 명령: `npm run rehearsal:stage`
+- 실행/기록 템플릿: `docs/STAGING_REHEARSAL_TEMPLATE.md`
+
 ## 장애 대응 가이드
 ### 1) API 5xx 증가
 1. 애플리케이션 로그에서 스택트레이스 확인.

@@ -56,3 +56,4 @@
 - 보안 체크리스트: `docs/SECURITY_CHECKLIST.md`
 - 프로젝트 진행 현황: `docs/PROJECT_STATUS.md`
 - 배포 변수 템플릿: `docs/DEPLOYMENT_ENV_TEMPLATE.md`
+- 스테이징 리허설 템플릿: `docs/STAGING_REHEARSAL_TEMPLATE.md`
