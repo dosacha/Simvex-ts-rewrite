@@ -32,7 +32,11 @@ function createImportFixture(): string {
   return root;
 }
 
-test("GET /api/study/catalog: domain 쿼리 없이도 기본 도메인으로 응답함", async (t) => {
+function makeUserId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
+
+test("GET /api/study/catalog: domain query 없이 기본 도메인으로 응답함", async (t) => {
   const fixtureDir = createImportFixture();
   setCatalogImportDir(fixtureDir);
 
@@ -46,7 +50,7 @@ test("GET /api/study/catalog: domain 쿼리 없이도 기본 도메인으로 응
   assert.equal(payload.categories.length, 1);
 });
 
-test("GET /api/models/:id/quizzes: 정답 필드(answer)를 노출하지 않음", async (t) => {
+test("GET /api/models/:id/quizzes: answer 필드를 노출하지 않음", async (t) => {
   const fixtureDir = createImportFixture();
   setCatalogImportDir(fixtureDir);
 
@@ -63,6 +67,7 @@ test("GET /api/models/:id/quizzes: 정답 필드(answer)를 노출하지 않음"
   assert.equal(quizRes.statusCode, 200);
   const quizzes = quizRes.json() as Array<Record<string, unknown>>;
   assert.equal(quizzes.length, 1);
+
   const firstQuiz = quizzes[0];
   assert.ok(firstQuiz);
   assert.ok(!("answer" in firstQuiz));
@@ -81,11 +86,14 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
   const firstModel = models[0];
   assert.ok(firstModel);
 
+  const ownerId = makeUserId("owner");
+  const otherId = makeUserId("other");
+
   const createRes = await app.inject({
     method: "POST",
     url: `/api/models/${firstModel.id}/memos`,
     headers: {
-      "x-user-id": "owner-user",
+      "x-user-id": ownerId,
       "content-type": "application/json",
     },
     payload: { title: "memo-1", content: "memo-content" },
@@ -97,7 +105,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
     method: "PUT",
     url: `/api/memos/${createdMemo.id}`,
     headers: {
-      "x-user-id": "other-user",
+      "x-user-id": otherId,
       "content-type": "application/json",
     },
     payload: { title: "hijack", content: "hijack" },
@@ -108,7 +116,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
     method: "PUT",
     url: `/api/memos/${createdMemo.id}`,
     headers: {
-      "x-user-id": "owner-user",
+      "x-user-id": ownerId,
       "content-type": "application/json",
     },
     payload: { title: "updated", content: "updated-content" },
@@ -117,4 +125,91 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
   const updated = updateByOwner.json() as { title: string; content: string };
   assert.equal(updated.title, "updated");
   assert.equal(updated.content, "updated-content");
+});
+
+test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) => {
+  const fixtureDir = createImportFixture();
+  setCatalogImportDir(fixtureDir);
+
+  const app = await buildServer();
+  t.after(() => app.close());
+
+  const ownerId = makeUserId("wf-owner");
+  const otherId = makeUserId("wf-other");
+
+  const nodeARes = await app.inject({
+    method: "POST",
+    url: "/api/workflow/nodes",
+    headers: {
+      "x-user-id": ownerId,
+      "content-type": "application/json",
+    },
+    payload: { title: "Node A", content: "A", x: 100, y: 120 },
+  });
+  assert.equal(nodeARes.statusCode, 201);
+  const nodeA = nodeARes.json() as { id: number };
+
+  const nodeBRes = await app.inject({
+    method: "POST",
+    url: "/api/workflow/nodes",
+    headers: {
+      "x-user-id": ownerId,
+      "content-type": "application/json",
+    },
+    payload: { title: "Node B", content: "B", x: 200, y: 220 },
+  });
+  assert.equal(nodeBRes.statusCode, 201);
+  const nodeB = nodeBRes.json() as { id: number };
+
+  const createConnRes = await app.inject({
+    method: "POST",
+    url: "/api/workflow/connections",
+    headers: {
+      "x-user-id": ownerId,
+      "content-type": "application/json",
+    },
+    payload: { from: nodeA.id, to: nodeB.id, fromAnchor: "right", toAnchor: "left" },
+  });
+  assert.equal(createConnRes.statusCode, 201);
+
+  const ownerList = await app.inject({
+    method: "GET",
+    url: "/api/workflow",
+    headers: { "x-user-id": ownerId },
+  });
+  assert.equal(ownerList.statusCode, 200);
+  const ownerWorkflow = ownerList.json() as {
+    nodes: Array<{ id: number }>;
+    connections: Array<{ id: number; from: number; to: number }>;
+  };
+  assert.equal(ownerWorkflow.nodes.length, 2);
+  assert.equal(ownerWorkflow.connections.length, 1);
+
+  const otherList = await app.inject({
+    method: "GET",
+    url: "/api/workflow",
+    headers: { "x-user-id": otherId },
+  });
+  assert.equal(otherList.statusCode, 200);
+  const otherWorkflow = otherList.json() as { nodes: unknown[]; connections: unknown[] };
+  assert.equal(otherWorkflow.nodes.length, 0);
+  assert.equal(otherWorkflow.connections.length, 0);
+
+  const updateByOther = await app.inject({
+    method: "PUT",
+    url: `/api/workflow/nodes/${nodeA.id}`,
+    headers: {
+      "x-user-id": otherId,
+      "content-type": "application/json",
+    },
+    payload: { title: "hijack" },
+  });
+  assert.equal(updateByOther.statusCode, 404);
+
+  const deleteByOwner = await app.inject({
+    method: "DELETE",
+    url: `/api/workflow/nodes/${nodeA.id}`,
+    headers: { "x-user-id": ownerId },
+  });
+  assert.equal(deleteByOwner.statusCode, 204);
 });
