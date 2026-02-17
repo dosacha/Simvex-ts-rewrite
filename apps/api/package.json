@@ -10,6 +10,7 @@
     "migrate": "tsx scripts/migrate.ts",
     "migrate:validate": "tsx scripts/validate-migrations.ts",
     "db:smoke": "tsx scripts/db-smoke.ts",
+    "rehearsal:check": "tsx scripts/check-stage-env.ts",
     "test": "npm run test:unit && npm run test:postgres",
     "test:unit": "tsx --test src/core/catalog.test.ts src/core/repository.test.ts src/modules/api-contract.test.ts",
     "test:postgres": "tsx --test src/core/repository-postgres.test.ts",

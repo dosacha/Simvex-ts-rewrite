@@ -7,6 +7,7 @@
 
 ## 사전 조건
 - `docs/DEPLOYMENT_ENV_TEMPLATE.md` 기준으로 `stage` 환경변수 세팅 완료.
+- `env/stage.example.env`를 참고해 실제 stage Secret 값 주입 완료.
 - 스테이징 DB 접근 가능 상태.
 - `SIMVEX_REPOSITORY_DRIVER=postgres` 설정 완료.
 
@@ -16,9 +17,10 @@ npm run rehearsal:stage
 ```
 
 내부 실행 순서:
-1. `npm run migrate:validate -w @simvex/api`
-2. `npm run db:smoke -w @simvex/api`
-3. `npm run test:unit -w @simvex/api`
+1. `npm run rehearsal:check -w @simvex/api`
+2. `npm run migrate:validate -w @simvex/api`
+3. `npm run db:smoke -w @simvex/api`
+4. `npm run test:unit -w @simvex/api`
 
 ## 결과 기록
 - 실행 일시:

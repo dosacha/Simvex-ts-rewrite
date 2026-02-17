@@ -17,7 +17,7 @@
     "db:migrate:local": "cross-env DATABASE_URL=postgres://simvex:simvex@localhost:5432/simvex npm run migrate -w @simvex/api",
     "db:smoke:local": "cross-env DATABASE_URL=postgres://simvex:simvex@localhost:5432/simvex npm run db:smoke -w @simvex/api",
     "dev:api:pg": "cross-env SIMVEX_REPOSITORY_DRIVER=postgres DATABASE_URL=postgres://simvex:simvex@localhost:5432/simvex npm run dev -w @simvex/api",
-    "rehearsal:stage": "npm run migrate:validate -w @simvex/api && npm run db:smoke -w @simvex/api && npm run test:unit -w @simvex/api"
+    "rehearsal:stage": "npm run rehearsal:check -w @simvex/api && npm run migrate:validate -w @simvex/api && npm run db:smoke -w @simvex/api && npm run test:unit -w @simvex/api"
   },
   "devDependencies": {
     "cross-env": "^10.0.0"
