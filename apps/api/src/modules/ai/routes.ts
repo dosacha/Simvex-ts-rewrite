@@ -53,25 +53,35 @@ export async function registerAiRoutes(app: FastifyInstance) {
       });
     }
 
-    const parts = findPartsByModelId(modelId);
-    const part = parts.find((item) => item.meshName === request.body.meshName);
-    const mode: AiAskResponse["mode"] = part ? "PART" : "GLOBAL";
-    const context = part
-      ? `- model: ${model.title}\n- part: ${part.meshName}\n- description: ${part.content.description ?? ""}`
-      : `- model: ${model.title}`;
+    try {
+      const parts = findPartsByModelId(modelId);
+      const part = parts.find((item) => item.meshName === request.body.meshName);
+      const mode: AiAskResponse["mode"] = part ? "PART" : "GLOBAL";
+      const context = part
+        ? `- model: ${model.title}\n- part: ${part.meshName}\n- description: ${part.content.description ?? ""}`
+        : `- model: ${model.title}`;
 
-    const answer = buildAnswer(question, model.title, part?.meshName);
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    await repositories.aiHistory.append(userId, modelId, { question, answer });
+      const answer = buildAnswer(question, model.title, part?.meshName);
+      const userId = String(request.headers["x-user-id"] ?? "default-guest");
+      await repositories.aiHistory.append(userId, modelId, { question, answer });
 
-    return {
-      answer,
-      context,
-      mode,
-      meta: {
-        provider: "mock",
-        partFound: Boolean(part),
-      },
-    };
+      return {
+        answer,
+        context,
+        mode,
+        meta: {
+          provider: "mock",
+          partFound: Boolean(part),
+        },
+      };
+    } catch (error) {
+      request.log.error({ err: error }, "ai ask failed");
+      return reply.code(502).send({
+        answer: "",
+        context: "",
+        mode: "PART",
+        meta: { error: "ai service unavailable" },
+      });
+    }
   });
 }

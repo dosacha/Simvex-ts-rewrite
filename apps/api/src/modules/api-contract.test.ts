@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { buildServer } from "../server";
 import { setCatalogImportDir } from "../core/catalog";
+import { repositories } from "../core/repository";
 
 function createImportFixture(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "simvex-api-contract-"));
@@ -212,4 +213,39 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
     headers: { "x-user-id": ownerId },
   });
   assert.equal(deleteByOwner.statusCode, 204);
+});
+
+test("POST /api/ai/ask: 내부 오류 발생 시 마스킹된 에러를 반환함", async (t) => {
+  const fixtureDir = createImportFixture();
+  setCatalogImportDir(fixtureDir);
+
+  const app = await buildServer();
+  t.after(() => app.close());
+
+  const originalAppend = repositories.aiHistory.append;
+  repositories.aiHistory.append = async () => {
+    throw new Error("upstream provider timeout details");
+  };
+  t.after(() => {
+    repositories.aiHistory.append = originalAppend;
+  });
+
+  const modelRes = await app.inject({ method: "GET", url: "/api/models" });
+  assert.equal(modelRes.statusCode, 200);
+  const models = modelRes.json() as Array<{ id: number }>;
+  const firstModel = models[0];
+  assert.ok(firstModel);
+
+  const aiRes = await app.inject({
+    method: "POST",
+    url: "/api/ai/ask",
+    headers: { "content-type": "application/json" },
+    payload: { modelId: firstModel.id, question: "테스트 질문" },
+  });
+
+  assert.equal(aiRes.statusCode, 502);
+  const payload = aiRes.json() as { meta?: { error?: string }; answer?: string; context?: string };
+  assert.equal(payload.meta?.error, "ai service unavailable");
+  assert.equal(payload.answer, "");
+  assert.equal(payload.context, "");
 });
