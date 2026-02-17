@@ -34,3 +34,4 @@
   - 환경변수 `DATABASE_URL` 또는 `POSTGRES_URL`을 설정함.
   - 예시: `$env:DATABASE_URL='postgres://user:pass@localhost:5432/simvex'`
   - 초기 스키마 기준 파일: `apps/api/db/migrations/001_init.sql`
+  - 마이그레이션 실행: `npm run migrate -w @simvex/api`
