@@ -10,6 +10,14 @@
     "build": "npm run -ws build",
     "dev": "npm run -ws dev",
     "lint": "npm run -ws lint",
-    "typecheck": "npm run -ws typecheck"
+    "typecheck": "npm run -ws typecheck",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:migrate:local": "cross-env DATABASE_URL=postgres://simvex:simvex@localhost:5432/simvex npm run migrate -w @simvex/api",
+    "dev:api:pg": "cross-env SIMVEX_REPOSITORY_DRIVER=postgres DATABASE_URL=postgres://simvex:simvex@localhost:5432/simvex npm run dev -w @simvex/api"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0"
   }
 }

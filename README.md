@@ -35,3 +35,10 @@
   - 예시: `$env:DATABASE_URL='postgres://user:pass@localhost:5432/simvex'`
   - 초기 스키마 기준 파일: `apps/api/db/migrations/001_init.sql`
   - 마이그레이션 실행: `npm run migrate -w @simvex/api`
+
+## 로컬 Postgres 개발 흐름
+- 컨테이너 실행: `npm run db:up`
+- 로컬 DB 마이그레이션: `npm run db:migrate:local`
+- Postgres 모드 API 실행: `npm run dev:api:pg`
+- DB 로그 확인: `npm run db:logs`
+- 컨테이너 종료: `npm run db:down`
