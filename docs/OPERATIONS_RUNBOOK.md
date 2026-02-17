@@ -28,6 +28,7 @@
 4. `npm run test:unit -w @simvex/api`
 5. `npm run test:postgres -w @simvex/api`
 6. `npm run typecheck -w @simvex/web`
+7. `docs/DEPLOYMENT_ENV_TEMPLATE.md` 기준으로 stage/prod 환경변수 최종 확인
 
 ## 장애 대응 가이드
 ### 1) API 5xx 증가

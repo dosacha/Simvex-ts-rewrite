@@ -55,3 +55,4 @@
 - 운영 Runbook: `docs/OPERATIONS_RUNBOOK.md`
 - 보안 체크리스트: `docs/SECURITY_CHECKLIST.md`
 - 프로젝트 진행 현황: `docs/PROJECT_STATUS.md`
+- 배포 변수 템플릿: `docs/DEPLOYMENT_ENV_TEMPLATE.md`
