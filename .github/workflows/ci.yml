@@ -40,11 +40,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate migrations
+        run: npm run migrate:validate -w @simvex/api
+
       - name: API typecheck
         run: npm run typecheck -w @simvex/api
 
-      - name: API test
-        run: npm run test -w @simvex/api
+      - name: API unit/contract test
+        run: npm run test:unit -w @simvex/api
+
+      - name: API postgres test
+        run: npm run test:postgres -w @simvex/api
 
       - name: Web typecheck
         run: npm run typecheck -w @simvex/web
