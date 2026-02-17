@@ -49,3 +49,7 @@
 - 마이그레이션 파일 검증: `npm run migrate:validate -w @simvex/api`
 - API unit/contract 테스트: `npm run test:unit -w @simvex/api`
 - API postgres 테스트: `npm run test:postgres -w @simvex/api`
+- DB 스모크체크: `npm run db:smoke -w @simvex/api`
+
+## 운영 문서
+- 운영 Runbook: `docs/OPERATIONS_RUNBOOK.md`
