@@ -15,6 +15,12 @@ interface ConnectionPayload {
   toAnchor?: string;
 }
 
+function sanitizeFileName(fileName: string): string {
+  const normalized = fileName.replace(/[\u0000-\u001f\u007f]+/g, "").trim();
+  const noPath = normalized.replace(/[\\/]+/g, "_");
+  return noPath.length > 0 ? noPath : "uploaded-file";
+}
+
 export async function registerWorkflowRoutes(app: FastifyInstance) {
   app.get("/api/workflow", async (request) => {
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
@@ -128,9 +134,10 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     if (!part) return reply.code(400).send({ message: "업로드할 파일이 없습니다." });
 
     const buffer = await part.toBuffer();
+    const fileName = sanitizeFileName(part.filename);
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
     const file = await repositories.workflow.addFileToNode(userId, nodeId, {
-      fileName: part.filename,
+      fileName,
       contentType: part.mimetype,
       buffer,
     });

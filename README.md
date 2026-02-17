@@ -53,3 +53,5 @@
 
 ## 운영 문서
 - 운영 Runbook: `docs/OPERATIONS_RUNBOOK.md`
+- 보안 체크리스트: `docs/SECURITY_CHECKLIST.md`
+- 프로젝트 진행 현황: `docs/PROJECT_STATUS.md`

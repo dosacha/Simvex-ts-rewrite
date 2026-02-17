@@ -10,9 +10,20 @@ import { registerWorkflowRoutes } from "./modules/workflow/routes";
 
 export async function buildServer() {
   const app = Fastify({ logger: true });
+  const configuredOrigins = (process.env.SIMVEX_CORS_ORIGINS ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  const allowlist = new Set(
+    configuredOrigins.length > 0 ? configuredOrigins : ["http://localhost:5173", "http://127.0.0.1:5173"],
+  );
 
   await app.register(cors, {
-    origin: true,
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowlist.has(origin)) return callback(null, true);
+      return callback(new Error("CORS origin not allowed"), false);
+    },
     credentials: true,
   });
 
