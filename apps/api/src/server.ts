@@ -1,4 +1,5 @@
 ﻿import Fastify from "fastify";
+import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { registerModelRoutes } from "./modules/models/routes";
@@ -32,12 +33,20 @@ export async function buildServer() {
   return app;
 }
 
-const port = Number(process.env.PORT ?? 8080);
-const host = process.env.HOST ?? "0.0.0.0";
+async function startServer() {
+  const port = Number(process.env.PORT ?? 8080);
+  const host = process.env.HOST ?? "0.0.0.0";
 
-buildServer()
-  .then((app) => app.listen({ port, host }))
-  .catch((err) => {
+  try {
+    const app = await buildServer();
+    await app.listen({ port, host });
+  } catch (err) {
     console.error(err);
     process.exit(1);
-  });
+  }
+}
+
+const directRunArg = process.argv[1] ? pathToFileURL(process.argv[1]).href : "";
+if (import.meta.url === directRunArg) {
+  void startServer();
+}
