@@ -23,5 +23,5 @@ Get-Content $EnvFile | ForEach-Object {
   Set-Item -Path "Env:$name" -Value $value
 }
 
-Write-Host "stage 환경변수 로드 완료: $EnvFile"
+Write-Host "Stage env loaded: $EnvFile"
 npm run rehearsal:stage

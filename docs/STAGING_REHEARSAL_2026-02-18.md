@@ -28,6 +28,15 @@ npm run rehearsal:stage
 - `test:unit` 통과
   - `pass 9 / fail 0`
 
+## 재실행 기록 (같은 날 2차)
+- 실행 일시: 2026-02-18 11:26 +09:00
+- 실행 명령: `.\scripts\run-stage-rehearsal.ps1 -EnvFile env/stage.env`
+- 결과:
+  - `rehearsal:check` 통과
+  - `migrate:validate` 통과
+  - `db:smoke` 통과 (`latest_migration: 003_constraints.sql`)
+  - `test:unit` 통과 (`pass 9 / fail 0`)
+
 ## 후속 조치
 1. 실제 stage 인프라 DB(`stage.simvex.com` 도메인/실 DB 호스트)로 동일 리허설 1회 재실행.
 2. 실행 결과를 본 문서에 추가 기록 후 배포 판정 확정.
