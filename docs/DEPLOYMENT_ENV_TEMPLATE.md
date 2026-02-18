@@ -11,7 +11,7 @@
 ## dev
 - `NODE_ENV=development`
 - `SIMVEX_REPOSITORY_DRIVER=postgres`
-- `DATABASE_URL=postgres://simvex:simvex@localhost:5432/simvex`
+- `DATABASE_URL=postgres://dosacha:dosacha@localhost:5432/simvex`
 - `SIMVEX_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173`
 - `PORT=8080`
 - `HOST=0.0.0.0`

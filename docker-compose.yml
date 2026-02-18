@@ -5,12 +5,12 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: simvex
-      POSTGRES_USER: simvex
-      POSTGRES_PASSWORD: simvex
+      POSTGRES_USER: dosacha
+      POSTGRES_PASSWORD: dosacha
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U simvex -d simvex"]
+      test: ["CMD-SHELL", "pg_isready -U dosacha -d simvex"]
       interval: 5s
       timeout: 5s
       retries: 20
