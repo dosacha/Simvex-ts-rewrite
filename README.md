@@ -1,4 +1,4 @@
-﻿# SIMVEX TypeScript Rewrite
+# SIMVEX TypeScript Rewrite
 
 목표: 기존 핵심 기능을 유지하면서 타입 안정성, 모듈성, 테스트 가능성을 높인 구조로 재작성.
 
@@ -60,3 +60,11 @@
 - 스테이징 리허설 템플릿: `docs/STAGING_REHEARSAL_TEMPLATE.md`
 - 스테이징 env 예시: `env/stage.example.env`
 - 스테이징 리허설 실행 스크립트(Windows): `scripts/run-stage-rehearsal.ps1`
+
+## Legacy UI 실행
+- 경로: `legacy-ui/simvex-ui-main`
+- 실행:
+  - `cd legacy-ui/simvex-ui-main`
+  - `npm install`
+  - `npm start`
+- 기본 주소: `http://localhost:3000` (API는 `http://localhost:8080` 기준 프록시 동작)
