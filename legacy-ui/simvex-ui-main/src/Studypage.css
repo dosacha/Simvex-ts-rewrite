@@ -1,0 +1,133 @@
+/* ─── STUDY PAGE 본문 영역 ─── */
+.study-body {
+  flex: 1;
+  min-height: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* .inner 안의 세로 흐름 */
+.study-body .inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: center;
+  gap: 28px;
+  padding: 28px 0 20px;
+}
+
+/* ─── 타이틀 ─── */
+.study-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  letter-spacing: -0.3px;
+  animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ─── 카드 그리드 (3열 × 2행) ─── */
+.study-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  width: 100%;
+}
+
+/* ─── 학습 카드 ─── */
+.study-card {
+  background: linear-gradient(150deg, rgba(26,32,52,0.85), rgba(16,20,38,0.9));
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  padding: 28px 18px 22px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s, background 0.3s;
+  animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  position: relative;
+  overflow: hidden;
+}
+
+/* stagger delay */
+.study-card:nth-child(1) { animation-delay: 0.08s; }
+.study-card:nth-child(2) { animation-delay: 0.16s; }
+.study-card:nth-child(3) { animation-delay: 0.24s; }
+.study-card:nth-child(4) { animation-delay: 0.32s; }
+.study-card:nth-child(5) { animation-delay: 0.40s; }
+.study-card:nth-child(6) { animation-delay: 0.48s; }
+
+.study-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0,188,212,0.35);
+  box-shadow: 0 6px 32px rgba(0,188,212,0.12);
+  background: linear-gradient(150deg, rgba(30,38,62,0.9), rgba(20,25,48,0.95));
+}
+
+/* 카드 내부 미세한 빛 반사 */
+.study-card::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -40%;
+  width: 180%;
+  height: 180%;
+  background: radial-gradient(circle at 30% 20%, rgba(0,188,212,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* ─── 3D 아이콘 원형 배경 ─── */
+.study-icon-wrap {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 16px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(28,35,60,0.9), rgba(18,22,42,0.95));
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 아이콘 아래 은근한 색 빛 */
+.study-icon-wrap .icon-glow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 24px;
+  filter: blur(10px);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.study-icon-wrap svg {
+  width: 58px;
+  height: 58px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+
+/* ─── 카드 텍스트 ─── */
+.study-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.study-card-desc {
+  font-size: 11px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.35);
+  font-weight: 300;
+  position: relative;
+}
