@@ -16,6 +16,11 @@
 npm run rehearsal:stage
 ```
 
+Windows PowerShell에서 env 파일까지 자동 로드하려면:
+```powershell
+.\scripts\run-stage-rehearsal.ps1 -EnvFile env/stage.env
+```
+
 내부 실행 순서:
 1. `npm run rehearsal:check -w @simvex/api`
 2. `npm run migrate:validate -w @simvex/api`
