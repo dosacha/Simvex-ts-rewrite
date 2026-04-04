@@ -1,4 +1,4 @@
-# Final Sign-off Checklist
+# 최종 사인오프 체크리스트
 
 기준일: 2026-02-18
 

@@ -1,4 +1,4 @@
-# Deployment Env Template
+# 배포 환경 변수 템플릿
 
 기준일: 2026-02-17
 

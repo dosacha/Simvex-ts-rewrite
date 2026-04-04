@@ -304,7 +304,7 @@ export default function ExamFieldSelectPage({ onHome, onStudy, onLab, onTest, on
       <div className="ambient-glow glow-2" />
 
       <div className="page-wrapper">
-        {/* NAV */}
+        {/* 상단 내비게이션 */}
         <nav className="nav">
           <div className="inner">
             <div className="nav-logo" onClick={onHome}>

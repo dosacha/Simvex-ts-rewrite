@@ -84,7 +84,7 @@ export default function App() {
         onLab={() => setPage("workflow")}
         onTest={() => setPage("examFieldSelect")}
 
-        // ✅ 추가: 모델 선택(모델 리스트)로 돌아가기
+        // 모델 선택(목록)으로 복귀
         onBack={() => setPage("productList")} 
       />
     );

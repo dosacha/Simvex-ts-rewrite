@@ -288,7 +288,7 @@ const SUBJECTS = [
 /*  StudyPage 컴포넌트                           */
 /* ════════════════════════════════════════════ */
 /**
- * ✅ 변경점
+ * 변경점
  * - props 를 (onHome, onFieldSelect) 로 받는다.
  * - 카드 클릭 시 onFieldSelect(s.title) 로 분야명을 App 으로 전달한다.
  */
@@ -315,7 +315,7 @@ export default function StudyPage({ onHome, onFieldSelect, onLab, onTest }) {
       <div className="ambient-glow glow-2" />
 
       <div className="page-wrapper">
-        {/* ── NAV ── */}
+        {/* 상단 내비게이션 */}
         <nav className="nav">
           <div className="inner">
             <div className="nav-logo" onClick={onHome}>
@@ -346,7 +346,7 @@ export default function StudyPage({ onHome, onFieldSelect, onLab, onTest }) {
                 <div
                   key={i}
                   className="study-card"
-                  onClick={() => onFieldSelect?.(s.title)}   // ✅ 여기서 분야명을 넘김
+                  onClick={() => onFieldSelect?.(s.title)}   // 분야명 전달
                   style={{ cursor: "pointer" }}
                 >
                   <div className="study-icon-wrap">

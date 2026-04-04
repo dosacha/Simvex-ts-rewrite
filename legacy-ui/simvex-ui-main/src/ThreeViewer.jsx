@@ -14,7 +14,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
  * @param {Function} onAssemblyProgressChange - 분해도 변경 알림 핸들러
  */
 
-// 2. 함수 선언부를 forwardRef로 감싸서 변경합니다.
+// forwardRef 래핑
 const ThreeViewer = forwardRef(({
   modelUrl,
   parts = [],
@@ -23,7 +23,7 @@ const ThreeViewer = forwardRef(({
   onPartClick,
   onAssemblyProgressChange,
   showOutlines = false,
-}, ref) => { // <--- props와 ref를 인자로 받습니다.
+}, ref) => { // props, ref 인자
 
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -46,26 +46,26 @@ const ThreeViewer = forwardRef(({
   const DEFAULT_POS = { x: 3, y: 2, z: 5 };
   const currentModelName = useMemo(() => modelUrl ? modelUrl.split('/').pop().split('.')[0] : "default", [modelUrl]);
 
-  // ▼▼▼ [핵심 추가] 부모에서 호출할 수 있는 resetView 함수 정의 ▼▼▼
+  // 부모 호출용 resetView 정의
   useImperativeHandle(ref, () => ({
     resetView: () => {
       if (cameraRef.current && controlsRef.current) {
-        // 1. 카메라 위치 및 타겟 초기화
+        // 카메라 위치/타깃 초기화
         cameraRef.current.position.set(DEFAULT_POS.x, DEFAULT_POS.y, DEFAULT_POS.z);
         controlsRef.current.target.set(0, 0, 0);
         cameraRef.current.zoom = 1;
         cameraRef.current.updateProjectionMatrix();
         controlsRef.current.update();
 
-        // 2. 로컬 스토리지 저장된 시점 삭제 (초기화 후 재저장 방지)
+        // 로컬 스토리지 시점 제거
         localStorage.removeItem(`viewer_${currentModelName}`);
       }
     }
   }));
 
-  // ═══ 2. 저장 로직 (useCallback으로 메모리 효율화) ═══
+  // 저장 로직
   const saveSession = useCallback(() => {
-    if (!cameraRef.current || !controlsRef.current || !isModelReady) { console.error("❌ 카메라나 컨트롤이 없습니다!"); return; }
+    if (!cameraRef.current || !controlsRef.current || !isModelReady) { console.error("카메라나 컨트롤이 없습니다!"); return; }
 
     const sessionObj = {
       camera: {
@@ -73,14 +73,14 @@ const ThreeViewer = forwardRef(({
         target: controlsRef.current.target.clone(),
         zoom: cameraRef.current.zoom
       },
-      progress: assemblyProgress, // 분해도 저장
+      progress: assemblyProgress, // 분해도
       lastSeen: new Date().toISOString()
     };
 
     localStorage.setItem(`viewer_${currentModelName}`, JSON.stringify(sessionObj));
   }, [currentModelName, assemblyProgress, isModelReady]);
 
-  // ═══ 3. 저장 트리거 (Debounce 적용) ═══
+  // 저장 트리거
   useEffect(() => {
     if (!controlsRef.current || !isModelReady) return;
 
@@ -90,7 +90,7 @@ const ThreeViewer = forwardRef(({
       saveTimeout = setTimeout(saveSession, 300);
     };
 
-    // 분해도 변경 시에도 저장 트리거
+    // 분해도 변경 시 저장 트리거
     if (assemblyProgress !== undefined) {
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveSession, 500);
@@ -103,7 +103,7 @@ const ThreeViewer = forwardRef(({
     };
   }, [isModelReady, saveSession, assemblyProgress]);
 
-  // ═══ 4. 시점 및 상태 복구 로직 (Restore) ═══
+  // 시점/상태 복구
   useEffect(() => {
     if (!isModelReady || !cameraRef.current || !controlsRef.current) return;
 
@@ -120,7 +120,7 @@ const ThreeViewer = forwardRef(({
       cameraRef.current.updateProjectionMatrix();
       controlsRef.current.update();
 
-      // 저장된 분해도가 있으면 복구 (부모 상태 업데이트)
+      // 저장 분해도 복구 + 부모 상태 업데이트
       if (data.progress !== undefined && onAssemblyProgressChange) {
         console.log(`[ThreeViewer] ${currentModelName} 상태 복구: 분해도 ${data.progress}`);
         onAssemblyProgressChange(data.progress);
@@ -133,7 +133,7 @@ const ThreeViewer = forwardRef(({
     }
   }, [isModelReady, currentModelName]);
 
-  // ═══ 초기 설정 ═══
+  // 초기 설정
   useEffect(() => {
     if (!mountRef.current) return;
 
@@ -253,7 +253,7 @@ const ThreeViewer = forwardRef(({
   }, [isModelReady, currentModelName]);
 
 
-  // ═══ GLB 파일 로드 ═══
+  // GLB 파일 로드
   useEffect(() => {
     if (!modelUrl || !sceneRef.current) return;
     setIsModelReady(false);
@@ -296,7 +296,7 @@ const ThreeViewer = forwardRef(({
   }, [modelUrl]);
 
   // ---------------------------------------------------------
-  // [추가] 윤곽선(Edge) 토글 로직
+  // 윤곽선(Edge) 토글 로직
   // ---------------------------------------------------------
   useEffect(() => {
     const model = sceneRef.current?.getObjectByName("loadedModel");
@@ -313,7 +313,7 @@ const ThreeViewer = forwardRef(({
           const material = new THREE.LineBasicMaterial({ color: 0x00e5ff, opacity: 0.5, transparent: true });
           outline = new THREE.LineSegments(edges, material);
 
-          // ▼ 이 라인을 추가하여 레이캐스팅 대상에서 제외합니다.
+          // 레이캐스팅 대상 제외
           outline.raycast = () => null;
 
           // 원본 메쉬에 자식으로 추가하여 같이 움직이게 함
@@ -329,7 +329,7 @@ const ThreeViewer = forwardRef(({
     });
   }, [showOutlines, isModelReady]); // showOutlines나 모델 로드 상태가 바뀔 때 실행
 
-  // ═══ [1] 데이터 매핑 (Parts 연결) ═══
+  // [1] 데이터 매핑 (Parts 연결)
   useEffect(() => {
     const model = sceneRef.current?.getObjectByName("loadedModel");
     if (!model || parts.length === 0) return;
@@ -368,7 +368,7 @@ const ThreeViewer = forwardRef(({
     });
   }, [parts, modelUrl, isModelReady]);
 
-  // ═══ [2] 조립/분해 초기화 (고정 방향/위치 설정) ═══
+  // [2] 조립/분해 초기화
   useEffect(() => {
     const model = sceneRef.current?.getObjectByName("loadedModel");
     if (!model || parts.length === 0 || !isModelReady) return;
@@ -415,8 +415,8 @@ const ThreeViewer = forwardRef(({
     });
   }, [parts, isModelReady]);
 
-  // ═══ [3] 조립/분해 애니메이션 루프 ═══
-  // ✅ [수정] parts를 dependency에 추가하여 데이터가 로드된 후에도 애니메이션이 실행되도록 함
+  // [3] 조립/분해 애니메이션 루프
+  // parts dependency 포함
   useEffect(() => {
     if (!isModelReady || logicalPartsRef.current.size === 0) return;
 
@@ -450,9 +450,9 @@ const ThreeViewer = forwardRef(({
 
     animate();
     return () => cancelAnimationFrame(animationFrameId);
-  }, [assemblyProgress, isModelReady, parts]); // 👈 parts 추가됨!
+  }, [assemblyProgress, isModelReady, parts]); // parts 포함
 
-  // ═══ 부품 하이라이트 ═══
+  // 부품 하이라이트
   useEffect(() => {
     if (logicalPartsRef.current.size === 0) return;
 
@@ -484,7 +484,7 @@ const ThreeViewer = forwardRef(({
 
   }, [selectedPartKey, parts]);
 
-  // ═══ 부품 클릭 감지 ═══
+  // 부품 클릭 감지
   useEffect(() => {
     if (!rendererRef.current || !onPartClick) return;
 

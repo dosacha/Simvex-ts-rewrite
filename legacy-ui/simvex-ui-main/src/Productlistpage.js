@@ -242,7 +242,7 @@ export default function ProductListPage({ field, onHome, onBack, onLearn, onLab,
     if (!allow) return models;
     if (allow.length === 0) return [];
 
-    // ⭐ 순서 고정 핵심 로직
+    // 순서 고정 핵심 로직
     return allow
       .map(title => models.find(m => m.title === title))
       .filter(Boolean);
@@ -255,7 +255,7 @@ export default function ProductListPage({ field, onHome, onBack, onLearn, onLab,
       <div className="ambient-glow glow-2" />
 
       <div className="page-wrapper">
-        {/* NAV */}
+        {/* 상단 내비게이션 */}
         <nav className="nav">
           <div className="inner">
             <div className="nav-logo" onClick={onHome}>
@@ -264,7 +264,7 @@ export default function ProductListPage({ field, onHome, onBack, onLearn, onLab,
           </div>
         </nav>
 
-        {/* BODY */}
+        {/* 본문 */}
         <section className="pl-body">
           <div className="inner">
             <div className="pl-header">
@@ -289,14 +289,14 @@ export default function ProductListPage({ field, onHome, onBack, onLearn, onLab,
 
             {!loading && errMsg && (
               <div className="pl-status error">
-                <div>⚠️ 오류 발생</div>
+                <div>오류 발생</div>
                 <div className="pl-error-msg">{errMsg}</div>
               </div>
             )}
 
             {!loading && !errMsg && filteredModels.length === 0 && (
               <div className="pl-status">
-                <div>📦 이 분야에 등록된 모델이 아직 없습니다.</div>
+                <div>이 분야에 등록된 모델이 아직 없습니다.</div>
                 <div className="pl-hint">곧 추가될 예정입니다.</div>
               </div>
             )}

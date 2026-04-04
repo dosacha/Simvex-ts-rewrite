@@ -1,4 +1,4 @@
-# Operations Runbook
+# 운영 런북
 
 ## 목적
 - 운영 환경에서 API/PostgreSQL 상태를 점검하고 장애 대응 절차를 빠르게 실행하기 위한 기준 문서.

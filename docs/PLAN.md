@@ -1,4 +1,4 @@
-﻿# Rewrite Plan
+﻿# 리라이트 계획
 
 ## 아키텍처 방향
 - 프론트: React + TypeScript + feature-based 폴더

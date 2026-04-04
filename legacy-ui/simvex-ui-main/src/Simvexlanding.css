@@ -1,4 +1,4 @@
-/* ─── HERO ─── */
+/* 히어로 영역 */
 .hero {
   flex: 1;
   min-height: 0;
@@ -50,7 +50,7 @@
   box-shadow: 0 6px 32px rgba(0,188,212,0.5);
 }
 
-/* ─── ENGINE VISUAL ─── */
+/* 엔진 비주얼 */
 .hero-visual {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
@@ -71,7 +71,7 @@
   filter: blur(18px); pointer-events: none;
 }
 
-/* ─── LANDING CARDS ─── */
+/* 랜딩 카드 */
 .cards-section {
   flex-shrink: 0; z-index: 2;
   display: flex; justify-content: center;
@@ -111,7 +111,7 @@
 .card-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #fff; }
 .card-desc { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.38); font-weight: 300; }
 
-/* ─── KEYFRAMES ─── */
+/* 키프레임 */
 @keyframes floatScene {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-10px); }

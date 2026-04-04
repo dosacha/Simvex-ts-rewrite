@@ -266,7 +266,7 @@ const filteredModels = useMemo(() => {
       <div className="ambient-glow glow-2" />
 
       <div className="page-wrapper">
-        {/* NAV */}
+        {/* 상단 내비게이션 */}
         <nav className="nav">
           <div className="inner">
             <div className="nav-logo" onClick={onHome}>
@@ -276,7 +276,7 @@ const filteredModels = useMemo(() => {
           </div>
         </nav>
 
-        {/* BODY */}
+        {/* 본문 */}
         <section className="pl-body">
           <div className="inner">
             <div className="pl-header">
@@ -304,14 +304,14 @@ const filteredModels = useMemo(() => {
 
             {!loading && errMsg && (
               <div className="pl-status error">
-                <div>⚠️ 오류 발생</div>
+                <div>오류 발생</div>
                 <div className="pl-error-msg">{errMsg}</div>
               </div>
             )}
 
             {!loading && !errMsg && filteredModels.length === 0 && (
               <div className="pl-status">
-                <div>🔍 이 분야의 모의고사가 아직 준비되지 않았습니다.</div>
+                <div>이 분야의 모의고사가 아직 준비되지 않았습니다.</div>
                 <div className="pl-hint">곧 추가될 예정입니다.</div>
               </div>
             )}
@@ -319,7 +319,7 @@ const filteredModels = useMemo(() => {
             {!loading && !errMsg && filteredModels.length > 0 && (
               <>
                 <div className="pl-multi-select-hint">
-                  💡 하나 이상의 모델을 선택하세요 (총 20문제)
+                  하나 이상의 모델을 선택하세요 (총 20문제)
                 </div>
                 <div className="pl-list">
                   {filteredModels.map((model) => {

@@ -1,16 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import "./Shared.css";
 import "./Workflowpage.css";
-import { getUserId } from "./utils/auth"; // 새로 만든 auth 유틸 import
+import { getUserId } from "./utils/auth"; // auth 유틸
 
 /* ════════════════════════════════════════════ */
-/* WorkflowPage (Full Code with UUID)           */
+/* 워크플로우 페이지 */
 /* ════════════════════════════════════════════ */
 export default function WorkflowPage({ onHome, onStudy, onTest }) {
   const [activeNav, setActiveNav] = useState("Lab");
   const navItems = ["Home", "Study", "CAD", "Lab", "Test"];
 
-  // API Base URL
+  // API 기본 주소
   const API_BASE = "/api/workflow";
 
   // 상태 관리
@@ -40,7 +40,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
   /* ── 초기 데이터 로드 ── */
   const fetchWorkflowData = useCallback(() => {
     fetch(API_BASE, {
-      headers: { "X-User-ID": getUserId() } // 헤더 추가
+      headers: { "X-User-ID": getUserId() } // 사용자 헤더
     })
       .then(res => res.json())
       .then(data => {
@@ -85,7 +85,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
   /* ── 노드 드래그 시작 ── */
   const handleNodeMouseDown = (e, node) => {
     if (e.target.classList.contains("wf-anchor")) return;
-    // [중요] 버튼이나 파일 관련 요소 클릭 시 드래그 방지
+    // 버튼/파일 요소 클릭 시 드래그 방지
     if (e.target.closest("button") || e.target.closest(".wf-node-attach") || e.target.closest(".wf-file-row")) return;
     
     e.stopPropagation();
@@ -118,7 +118,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "X-User-ID": getUserId() // 헤더 추가
+          "X-User-ID": getUserId() // 사용자 헤더
         },
         body: JSON.stringify(newConn)
       }).then(() => {
@@ -161,7 +161,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
           method: "PUT",
           headers: { 
             "Content-Type": "application/json",
-            "X-User-ID": getUserId() // 헤더 추가
+            "X-User-ID": getUserId() // 사용자 헤더
           },
           body: JSON.stringify({ x: node.x, y: node.y })
         });
@@ -191,17 +191,17 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
   const handleCanvasMouseDown = (e) => {
     if (e.target === canvasRef.current || e.target.classList.contains("wf-canvas-inner")) {
       
-      // [수정됨] 편집 중인 상태에서 바탕화면을 눌렀다면 -> 먼저 저장 실행!
+      // 편집 중 배경 클릭 시 저장 우선 실행
       if (editingNode) {
         const node = nodes.find(n => n.id === editingNode);
         if (node) {
-            saveNodeData(node); // 강제 저장
+            saveNodeData(node); // 즉시 저장
         }
       }
 
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
-      setEditingNode(null); // 그 다음 편집 모드 해제
+      setEditingNode(null); // 편집 모드 해제
     }
   };
 
@@ -217,7 +217,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "X-User-ID": getUserId() // 헤더 추가
+        "X-User-ID": getUserId() // 사용자 헤더
       },
       body: JSON.stringify(newNodeReq)
     })
@@ -232,7 +232,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
     fetch(`${API_BASE}/nodes/${nodeId}`, { 
       method: "DELETE",
-      headers: { "X-User-ID": getUserId() } // 헤더 추가
+      headers: { "X-User-ID": getUserId() } // 사용자 헤더
     })
       .then(res => {
           if(!res.ok) throw new Error("삭제 실패");
@@ -248,7 +248,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
     if(window.confirm('연결을 삭제하시겠습니까?')){
         fetch(`${API_BASE}/connections?from=${conn.from}&to=${conn.to}`, { 
           method: 'DELETE',
-          headers: { "X-User-ID": getUserId() } // 헤더 추가
+          headers: { "X-User-ID": getUserId() } // 사용자 헤더
         })
           .then(() => setConnections(prev => prev.filter(c => c.id !== conn.id)));
     }
@@ -262,7 +262,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
       method: "PUT",
       headers: { 
         "Content-Type": "application/json",
-        "X-User-ID": getUserId() // 헤더 추가
+        "X-User-ID": getUserId() // 사용자 헤더
       },
       body: JSON.stringify({ title: node.title, content: node.content })
     });
@@ -276,7 +276,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
     formData.append("file", file);
     fetch(`${API_BASE}/nodes/${nodeId}/files`, { 
       method: "POST", 
-      headers: { "X-User-ID": getUserId() }, // 헤더 추가
+      headers: { "X-User-ID": getUserId() }, // 사용자 헤더
       body: formData 
     })
       .then(() => fetchWorkflowData());
@@ -287,7 +287,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
     if (!window.confirm("파일을 삭제하시겠습니까?")) return;
     fetch(`${API_BASE}/files/${fileId}`, { 
       method: "DELETE",
-      headers: { "X-User-ID": getUserId() } // 헤더 추가
+      headers: { "X-User-ID": getUserId() } // 사용자 헤더
     })
       .then(res => {
         if (!res.ok) throw new Error("파일 삭제 실패");
@@ -321,7 +321,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
       <div className="ambient-glow glow-1" />
       <div className="ambient-glow glow-2" />
 
-      {/* 미리보기 모달 */}
+      {/* 파일 미리보기 모달 */}
       {previewFile && (
         <div className="wf-modal-overlay" onClick={() => setPreviewFile(null)}>
           <div className="wf-modal-content" onClick={e => e.stopPropagation()}>
@@ -416,7 +416,7 @@ export default function WorkflowPage({ onHome, onStudy, onTest }) {
                         <div className="wf-node-title">{node.title}</div>
                       )}
                       <div className="wf-node-actions">
-                        {/* 디자인 유지 + 기능 추가: label로 변경하여 input file 트리거 */}
+                        {/* input file 트리거용 label */}
                         <label className="wf-node-attach" onClick={(e) => e.stopPropagation()}>
                             <input type="file" style={{display:'none'}} onChange={(e) => handleFileUpload(e, node.id)} />
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

@@ -3,7 +3,7 @@ import "./Shared.css";
 import "./Exampage.css";
 
 /**
- * 남은 시간을 분:초 형식으로 변환
+ * 남은 시간 분:초 변환
  */
 function formatTime(seconds) {
   const mins = Math.floor(seconds / 60);
@@ -12,7 +12,7 @@ function formatTime(seconds) {
 }
 
 /**
- * 원형 점수 그래프 컴포넌트 (SVG)
+ * 원형 점수 그래프 컴포넌트
  */
 function ScoreCircle({ score }) {
   const radius = 60;
@@ -21,7 +21,7 @@ function ScoreCircle({ score }) {
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
-  // 점수에 따른 색상 결정
+  // 점수 구간별 색상
   let color = "#ef4444"; // 빨강
   if (score >= 80) color = "#22c55e"; // 초록
   else if (score >= 50) color = "#eab308"; // 노랑
@@ -82,7 +82,7 @@ export default function ExamPage({
   const [userAnswers, setUserAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(30 * 60);
 
-  // DB에서 문제 가져오기
+  // DB 문제 로드
   const fetchQuestions = async () => {
     if (selectedModels.length === 0) return;
     setExamState("loading");
@@ -182,7 +182,7 @@ export default function ExamPage({
     return worst.percent < 100 ? worst.title : null;
   }, [modelAnalysis]);
 
-  // ─── 시작 화면 ───
+  // 시작 화면
   if (examState === "start" || examState === "loading") {
     return (
       <>
@@ -238,7 +238,7 @@ export default function ExamPage({
     );
   }
 
-  // ─── 시험 진행 화면 ───
+  // 시험 진행 화면
   if (examState === "inProgress") {
     const q = questions[currentQ];
     if (!q) return null;
@@ -261,7 +261,7 @@ export default function ExamPage({
               <div className="exam-progress">
                 <div className="exam-header">
                   <div className="exam-progress-info">문제 {currentQ + 1} / {questions.length} (답변: {answeredCount})</div>
-                  <div className="exam-timer">⏱️ {formatTime(timeLeft)}</div>
+                  <div className="exam-timer">시간 {formatTime(timeLeft)}</div>
                 </div>
                 <div className="exam-progress-bar-bg"><div className="exam-progress-bar-fill" style={{ width: `${progress}%` }} /></div>
                 <div className="exam-question-card">
@@ -281,9 +281,9 @@ export default function ExamPage({
                   </div>
                 </div>
                 <div className="exam-nav-btns">
-                  <button className="exam-prev-btn" onClick={() => setCurrentQ((p) => Math.max(0, p - 1))} disabled={currentQ === 0}>◀ 이전</button>
+                  <button className="exam-prev-btn" onClick={() => setCurrentQ((p) => Math.max(0, p - 1))} disabled={currentQ === 0}>이전</button>
                   {currentQ < questions.length - 1 ? (
-                    <button className="exam-next-btn" onClick={() => setCurrentQ((p) => p + 1)}>다음 ▶</button>
+                    <button className="exam-next-btn" onClick={() => setCurrentQ((p) => p + 1)}>다음</button>
                   ) : (
                     <button className="exam-submit-btn" onClick={handleSubmit}>제출하기</button>
                   )}

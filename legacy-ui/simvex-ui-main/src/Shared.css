@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700&display=swap');
 
-/* ─── RESET ─── */
+/* 리셋 */
 * {
   margin: 0;
   padding: 0;
@@ -34,7 +34,7 @@ body,
   margin: 0 auto;
 }
 
-/* ─── NOISE OVERLAY ─── */
+/* 노이즈 오버레이 */
 .noise-overlay {
   position: fixed;
   inset: 0;
@@ -44,7 +44,7 @@ body,
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* ─── AMBIENT GLOW ─── */
+/* 앰비언트 글로우 */
 .ambient-glow {
   position: fixed;
   border-radius: 50%;
@@ -63,7 +63,7 @@ body,
   bottom: -100px; left: -80px;
 }
 
-/* ─── NAV ─── */
+/* 내비게이션 */
 .nav {
   flex-shrink: 0;
   z-index: 10;
@@ -120,7 +120,7 @@ body,
 }
 
 
-/* ─── KEYFRAMES ─── */
+/* 키프레임 */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
