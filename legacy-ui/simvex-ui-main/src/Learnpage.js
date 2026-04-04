@@ -237,7 +237,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
   const [activeNav, setActiveNav] = useState("Study");
   const [activeTab, setActiveTab] = useState("조립품");
 
-  /* ✅ DB 데이터 상태 */
+  /* DB 데이터 상태 */
   const [fullModel, setFullModel] = useState(selectedModel || {});
   const [parts, setParts] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
@@ -314,7 +314,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
     scrollRef.current.scrollLeft = scrollLeft.current - (e.pageX - scrollRef.current.offsetLeft - startX.current);
   }, []);
 
-  /* ✅ 초기 데이터 로드 (DB 연동 + 채팅 내역 로드) */
+  /* 초기 데이터 로드 */
   useEffect(() => {
     if (!selectedModel?.id) return;
 
@@ -336,7 +336,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
         const loadedParts = Array.isArray(data) ? data : [];
         setParts(loadedParts);
 
-         // ✅ 여기다 추가한다 (이 줄들만!)
+         // 이 위치에 추가
   console.log("지금 모델:", selectedModel?.title);
   console.log("부품 meshName:", loadedParts.map(p => p.meshName));
 
@@ -361,7 +361,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
       .then(data => setMemos(Array.isArray(data) ? data : []))
       .catch(err => console.error("메모 로드 실패:", err));
 
-    // ✅ 5. 대화 내역(Chat History) 불러오기 (사용자별)
+    // 대화 내역 로드 (사용자별)
     fetch(`/api/ai/history/${selectedModel.id}`, { headers })
       .then(res => res.ok ? res.json() : [])
       .then(data => {
@@ -384,7 +384,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
 
   }, [selectedModel]);
 
-  /* ✅ 메모장 CRUD (DB 연동 + 헤더 추가) */
+  /* 메모 CRUD */
   const addMemo = async () => {
     if (!selectedModel?.id) return;
     try {
@@ -504,7 +504,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMsgs, isAiLoading]);
 
-  /* ✅ AI 요청 로직 (헤더 추가) */
+  /* AI 요청 로직 */
   const sendChat = async () => {
     const question = chatInput.trim();
     if (!question || isAiLoading) return;
@@ -554,7 +554,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
     setSelectedPartKey(getPartKey(part));
   };
   
-  /* ✅ PDF 리포트 생성 */
+  /* PDF 리포트 생성 */
   const generatePdfReport = async () => {
 
     if (!window.jspdf || !window.html2canvas) {
@@ -658,7 +658,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
       <div className="ambient-glow glow-2" />
 
       <div className="page-wrapper">
-        {/* NAV */}
+        {/* 상단 내비게이션 */}
         <nav className="nav">
           <div className="inner">
             <div className="nav-logo" onClick={onHome}>
@@ -771,10 +771,10 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                         </div>
                         <div className="quiz-final-message">
                           {quizResults.filter((r) => r.correct).length === quizzes.length
-                            ? "완벽합니다! 🎉"
+                            ? "완벽합니다!"
                             : quizResults.filter((r) => r.correct).length >= quizzes.length * 0.6
-                              ? "잘하셨습니다! 👏"
-                              : "다시 도전해보세요! 💪"
+                              ? "잘하셨습니다!"
+                              : "다시 도전해보세요!"
                           }
                         </div>
                         <button className="quiz-btn-restart" onClick={resetQuiz}>다시 풀기</button>
@@ -1150,7 +1150,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
               chatMsgs.map((msg, idx) => (
                 <div key={idx} style={{ marginBottom: "15px", paddingBottom: "15px", borderBottom: "1px dashed #d0d7de" }}>
                   <div style={{ fontWeight: "600", color: msg.role === "ai" ? "#0969da" : "#57606a", marginBottom: "4px" }}>
-                    {msg.role === "ai" ? "🤖 AI Answer" : "👤 User Question"}
+                    {msg.role === "ai" ? "AI Answer" : "User Question"}
                   </div>
                   <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                 </div>

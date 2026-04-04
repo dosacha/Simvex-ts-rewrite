@@ -1,4 +1,4 @@
-﻿# API Compatibility Map
+﻿# API 호환 맵
 
 ## 유지 엔드포인트
 - GET `/api/models`

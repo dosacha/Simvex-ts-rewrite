@@ -1,8 +1,8 @@
-# SIMVEX TypeScript Rewrite
+# SIMVEX TypeScript 리라이트
 
 기존 SIMVEX MVP의 핵심 기능을 유지하면서, 타입 안정성/테스트 가능성/운영 가능성을 높이기 위해 재작성한 프로젝트.
 
-## Stack
+## 기술 스택
 - Web: React + TypeScript + Three.js
 - API: Node.js + TypeScript (Fastify)
 - Shared: 공통 API 타입/계약
@@ -86,9 +86,9 @@ Copy-Item .\env\stage.example.env .\env\stage.env
 .\scripts\run-stage-rehearsal.ps1 -EnvFile env/stage.env
 ```
 
-참고: `env/*.env`는 `.gitignore`로 제외되어 실제 비밀값이 커밋되지 않음.
+참고: `env/*.env`는 `.gitignore` 제외 대상. 실제 비밀값 커밋 금지.
 
-## Legacy UI 실행
+## Legacy UI 실행 절차
 기존 UI는 참조/비교를 위해 `legacy-ui/simvex-ui-main`에 포함됨.
 
 ```bash

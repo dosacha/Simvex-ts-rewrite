@@ -1,4 +1,4 @@
-/* ─── STUDY PAGE 본문 영역 ─── */
+/* 스터디 페이지 본문 영역 */
 .study-body {
   flex: 1;
   min-height: 0;
@@ -10,7 +10,7 @@
   overflow: hidden;
 }
 
-/* .inner 안의 세로 흐름 */
+/* .inner 세로 레이아웃 */
 .study-body .inner {
   display: flex;
   flex-direction: column;
@@ -21,7 +21,7 @@
   padding: 28px 0 20px;
 }
 
-/* ─── 타이틀 ─── */
+/* 타이틀 */
 .study-title {
   font-size: 26px;
   font-weight: 700;
@@ -31,7 +31,7 @@
   animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
 }
 
-/* ─── 카드 그리드 (3열 × 2행) ─── */
+/* 카드 그리드 (3열 × 2행) */
 .study-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -39,7 +39,7 @@
   width: 100%;
 }
 
-/* ─── 학습 카드 ─── */
+/* 학습 카드 */
 .study-card {
   background: linear-gradient(150deg, rgba(26,32,52,0.85), rgba(16,20,38,0.9));
   border: 1px solid rgba(255,255,255,0.07);
@@ -53,7 +53,7 @@
   overflow: hidden;
 }
 
-/* stagger delay */
+/* 카드 순차 지연 */
 .study-card:nth-child(1) { animation-delay: 0.08s; }
 .study-card:nth-child(2) { animation-delay: 0.16s; }
 .study-card:nth-child(3) { animation-delay: 0.24s; }
@@ -68,7 +68,7 @@
   background: linear-gradient(150deg, rgba(30,38,62,0.9), rgba(20,25,48,0.95));
 }
 
-/* 카드 내부 미세한 빛 반사 */
+/* 카드 내부 반사광 */
 .study-card::before {
   content: '';
   position: absolute;
@@ -80,7 +80,7 @@
   pointer-events: none;
 }
 
-/* ─── 3D 아이콘 원형 배경 ─── */
+/* 3D 아이콘 배경 */
 .study-icon-wrap {
   width: 100px;
   height: 100px;
@@ -94,7 +94,7 @@
   position: relative;
 }
 
-/* 아이콘 아래 은근한 색 빛 */
+/* 아이콘 하단 색광 */
 .study-icon-wrap .icon-glow {
   position: absolute;
   bottom: -8px;
@@ -115,7 +115,7 @@
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
 }
 
-/* ─── 카드 텍스트 ─── */
+/* 카드 텍스트 */
 .study-card-title {
   font-size: 15px;
   font-weight: 700;

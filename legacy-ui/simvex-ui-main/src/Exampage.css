@@ -1,6 +1,4 @@
-/* ════════════════════════════════════════════ */
-/*  ExamPage                                     */
-/* ════════════════════════════════════════════ */
+/* 시험 페이지 */
 
 .exam-body {
   flex: 1;
@@ -9,7 +7,7 @@
   padding: 40px 0;
 }
 
-/* ── 시작 화면 ── */
+/* 시작 화면 */
 .exam-start {
   max-width: 600px;
   margin: 60px auto;
@@ -97,13 +95,13 @@
   box-shadow: 0 4px 20px rgba(37,99,235,0.4);
 }
 
-/* ── 시험 진행 화면 ── */
+/* 시험 진행 화면 */
 .exam-progress {
   max-width: 900px;
   margin: 0 auto;
 }
 
-/* 상단 정보 바 */
+/* 상단 정보 영역 */
 .exam-header {
   display: flex;
   justify-content: space-between;

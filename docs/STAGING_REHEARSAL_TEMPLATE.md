@@ -1,4 +1,4 @@
-# Staging Rehearsal Template
+# 스테이징 리허설 템플릿
 
 기준일: 2026-02-17
 
