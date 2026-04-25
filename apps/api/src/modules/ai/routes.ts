@@ -11,7 +11,7 @@ function buildAnswer(question: string, modelTitle: string, partName?: string): s
 }
 
 export async function registerAiRoutes(app: FastifyInstance) {
-  app.get<{ Params: { modelId: string } }>("/api/ai/history/:modelId", async (request, reply) => {
+  app.get<{ Params: { modelId: string } }>("/ai/history/:modelId", async (request, reply) => {
     const modelId = Number(request.params.modelId);
     if (!Number.isInteger(modelId)) return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
 
@@ -22,7 +22,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
     return await repositories.aiHistory.listByModel(userId, modelId);
   });
 
-  app.post<{ Body: AiAskRequest }>("/api/ai/ask", async (request, reply) => {
+  app.post<{ Body: AiAskRequest }>("/ai/ask", async (request, reply) => {
     const question = request.body?.question?.trim();
     if (!question) {
       return reply.code(400).send({

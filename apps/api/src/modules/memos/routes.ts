@@ -2,7 +2,7 @@
 import { repositories } from "../../core/repository";
 
 export async function registerMemoRoutes(app: FastifyInstance) {
-  app.put<{ Params: { id: string }; Body: { title?: string; content?: string } }>("/api/memos/:id", async (request, reply) => {
+  app.put<{ Params: { id: string }; Body: { title?: string; content?: string } }>("/memos/:id", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 메모 ID가 아닙니다." });
 
@@ -16,7 +16,7 @@ export async function registerMemoRoutes(app: FastifyInstance) {
     return updated;
   });
 
-  app.delete<{ Params: { id: string } }>("/api/memos/:id", async (request, reply) => {
+  app.delete<{ Params: { id: string } }>("/memos/:id", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 메모 ID가 아닙니다." });
 

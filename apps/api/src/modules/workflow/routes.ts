@@ -22,7 +22,7 @@ function sanitizeFileName(fileName: string): string {
 }
 
 export async function registerWorkflowRoutes(app: FastifyInstance) {
-  app.get("/api/workflow", async (request) => {
+  app.get("/workflow", async (request) => {
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
     const workflow = await repositories.workflow.list(userId);
 
@@ -43,7 +43,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     };
   });
 
-  app.post<{ Body: NodePayload }>("/api/workflow/nodes", async (request, reply) => {
+  app.post<{ Body: NodePayload }>("/workflow/nodes", async (request, reply) => {
     const userId = String(request.headers["x-user-id"] ?? "default-guest");
     const node = await repositories.workflow.createNode(userId, {
       title: request.body?.title ?? "새 노드",
@@ -55,7 +55,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     return reply.code(201).send({ id: node.id });
   });
 
-  app.put<{ Params: { id: string }; Body: NodePayload }>("/api/workflow/nodes/:id", async (request, reply) => {
+  app.put<{ Params: { id: string }; Body: NodePayload }>("/workflow/nodes/:id", async (request, reply) => {
     const nodeId = Number(request.params.id);
     if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
 
@@ -72,7 +72,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     return { message: "ok" };
   });
 
-  app.delete<{ Params: { id: string } }>("/api/workflow/nodes/:id", async (request, reply) => {
+  app.delete<{ Params: { id: string } }>("/workflow/nodes/:id", async (request, reply) => {
     const nodeId = Number(request.params.id);
     if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
 
@@ -83,7 +83,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  app.post<{ Body: ConnectionPayload }>("/api/workflow/connections", async (request, reply) => {
+  app.post<{ Body: ConnectionPayload }>("/workflow/connections", async (request, reply) => {
     const from = Number(request.body?.from);
     const to = Number(request.body?.to);
     if (!Number.isInteger(from) || !Number.isInteger(to)) {
@@ -103,7 +103,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
   });
 
   app.delete<{ Querystring: { id?: string; from?: string; to?: string } }>(
-    "/api/workflow/connections",
+    "/workflow/connections",
     async (request, reply) => {
       const userId = String(request.headers["x-user-id"] ?? "default-guest");
       let id = Number(request.query.id);
@@ -126,7 +126,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     },
   );
 
-  app.post<{ Params: { nodeId: string } }>("/api/workflow/nodes/:nodeId/files", async (request, reply) => {
+  app.post<{ Params: { nodeId: string } }>("/workflow/nodes/:nodeId/files", async (request, reply) => {
     const nodeId = Number(request.params.nodeId);
     if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
 
@@ -146,7 +146,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     return reply.code(201).send({ id: file.id, fileName: file.fileName, url: `/api/workflow/files/download/${file.id}` });
   });
 
-  app.get<{ Params: { id: string } }>("/api/workflow/files/download/:id", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/workflow/files/download/:id", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 파일 ID가 아닙니다." });
 
@@ -159,7 +159,7 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
     return file.buffer;
   });
 
-  app.delete<{ Params: { id: string } }>("/api/workflow/files/:id", async (request, reply) => {
+  app.delete<{ Params: { id: string } }>("/workflow/files/:id", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 파일 ID가 아닙니다." });
 

@@ -11,9 +11,9 @@ import {
 import { repositories } from "../../core/repository";
 
 export async function registerModelRoutes(app: FastifyInstance) {
-  app.get("/api/models", async () => getCatalogStore().models);
+  app.get("/models", async () => getCatalogStore().models);
 
-  app.get<{ Params: { id: string } }>("/api/models/:id", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/models/:id", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
 
@@ -23,7 +23,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     return model;
   });
 
-  app.get<{ Params: { id: string } }>("/api/models/:id/parts", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/models/:id/parts", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
 
@@ -33,7 +33,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     return findPartsByModelId(id);
   });
 
-  app.get<{ Params: { id: string } }>("/api/models/:id/quizzes", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/models/:id/quizzes", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
 
@@ -43,7 +43,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     return findQuizzesByModelId(id).map(({ answer: _answer, ...quiz }) => quiz);
   });
 
-  app.get<{ Querystring: { modelIds?: string; count?: string } }>("/api/models/exam", async (request, reply) => {
+  app.get<{ Querystring: { modelIds?: string; count?: string } }>("/models/exam", async (request, reply) => {
     const idsText = request.query.modelIds?.trim();
     if (!idsText) return reply.code(400).send({ message: "modelIds 쿼리가 필요함." });
 
@@ -59,7 +59,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     return questions;
   });
 
-  app.post<{ Body: ExamSubmitRequest }>("/api/models/exam/submit", async (request, reply) => {
+  app.post<{ Body: ExamSubmitRequest }>("/models/exam/submit", async (request, reply) => {
     const answers = request.body?.answers;
     if (!Array.isArray(answers)) return reply.code(400).send({ message: "answers 배열이 필요함." });
 
@@ -74,7 +74,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
     };
   });
 
-  app.get<{ Params: { id: string } }>("/api/models/:id/memos", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/models/:id/memos", async (request, reply) => {
     const id = Number(request.params.id);
     if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
 
@@ -86,7 +86,7 @@ export async function registerModelRoutes(app: FastifyInstance) {
   });
 
   app.post<{ Params: { id: string }; Body: { title?: string; content?: string } }>(
-    "/api/models/:id/memos",
+    "/models/:id/memos",
     async (request, reply) => {
       const id = Number(request.params.id);
       if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });

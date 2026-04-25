@@ -32,14 +32,15 @@ export async function buildServer() {
       fileSize: 20 * 1024 * 1024,
     },
   });
+  await app.register(async (api) => {
+    await registerModelRoutes(api);
+    await registerStudyRoutes(api);
+    await registerAiRoutes(api);
+    await registerMemoRoutes(api);
+    await registerWorkflowRoutes(api);
 
-  await registerModelRoutes(app);
-  await registerStudyRoutes(app);
-  await registerAiRoutes(app);
-  await registerMemoRoutes(app);
-  await registerWorkflowRoutes(app);
-
-  app.get("/health", async () => ({ status: "ok" }));
+    api.get("/health", async () => ({ status: "ok" }));
+  }, { prefix: "/api" });
 
   return app;
 }
