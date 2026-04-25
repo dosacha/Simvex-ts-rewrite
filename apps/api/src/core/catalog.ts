@@ -48,13 +48,9 @@ export const DEFAULT_DOMAIN_KEY = "engineering-dict";
 const CATEGORY_KEY = "mechanics";
 const DEFAULT_IMPORT_DIR = path.resolve(
   process.cwd(),
-  "..",
-  "..",
-  "..",
-  "simvex-api-main",
-  "src",
-  "main",
-  "resources",
+  "apps",
+  "api",
+  "data",
   "import",
 );
 const ASSET_BASE = "/assets/3d";
@@ -98,6 +94,15 @@ function asNumber(value: unknown): number {
 }
 
 function buildStore(): CatalogStore {
+  if (!fs.existsSync(importDir)) {
+    console.warn(`[catalog] importDir not found: ${importDir}. Returning empty store.`);
+    return {
+      models: [],
+      partsByModelId: new Map(),
+      quizzesByModelId: new Map(),
+      answerByQuizId: new Map(),
+    };
+  }
   const files = fs
     .readdirSync(importDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && /^Data_.*\.json$/i.test(entry.name))
