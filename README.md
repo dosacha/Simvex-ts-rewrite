@@ -2,6 +2,14 @@
 
 기존 SIMVEX MVP의 핵심 기능을 유지하면서, 타입 안정성/테스트 가능성/운영 가능성을 높이기 위해 재작성한 프로젝트.
 
+## Live Demo
+- **Web**: https://d1jk6rz3s30fgw.cloudfront.net
+- **API Health**: https://d1jk6rz3s30fgw.cloudfront.net/api/health
+
+## 배포 아키텍처
+- CloudFront (서울 엣지) → S3(정적 파일) + API Gateway → Lambda (arm64) → Neon PostgreSQL
+- 월 비용: ~$0 (AWS 무료 티어 + Neon 무료 티어)
+
 ## 기술 스택
 - Web: React + TypeScript + Three.js
 - API: Node.js + TypeScript (Fastify)
