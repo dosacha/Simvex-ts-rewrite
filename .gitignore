@@ -8,3 +8,10 @@ build
 coverage
 *.log
 .DS_Store
+
+# AWS Lambda artifacts
+apps/api/dist/lambda/
+*.zip
+
+# Local Lambda testing artifacts
+apps/api/scripts/test-lambda.mjs

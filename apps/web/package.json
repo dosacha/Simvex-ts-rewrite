@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@simvex/web",
   "version": "0.1.0",
   "private": true,
@@ -18,10 +18,11 @@
     "three": "^0.182.0"
   },
   "devDependencies": {
+    "@types/node": "^22.19.11",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.7.0",
-    "vite": "^6.0.0"
+    "vite": "^6.4.2"
   }
 }

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
+    "build:lambda": "esbuild src/lambda.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/lambda/index.mjs --external:pg-native --external:@aws-sdk/* --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
     "start": "node dist/server.js",
     "migrate": "tsx scripts/migrate.ts",
     "migrate:validate": "tsx scripts/validate-migrations.ts",
@@ -18,16 +19,20 @@
     "lint": "echo \"no lint yet\""
   },
   "dependencies": {
-    "@simvex/shared": "0.1.0",
-    "fastify": "^5.0.0",
+    "@fastify/aws-lambda": "^6.4.0",
     "@fastify/cors": "^10.0.0",
     "@fastify/multipart": "^9.0.0",
+    "@simvex/shared": "0.1.0",
+    "fastify": "^5.0.0",
     "pg": "^8.16.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/pg": "^8.15.6",
+    "@types/aws-lambda": "^8.10.161",
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.15.6",
+    "dotenv-cli": "^11.0.0",
+    "esbuild": "^0.27.3",
     "tsx": "^4.20.0",
     "typescript": "^5.7.0"
   }
