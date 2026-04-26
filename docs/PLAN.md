@@ -1,7 +1,7 @@
 ﻿# 리라이트 계획
 
 ## 아키텍처 방향
-- 프론트: React + TypeScript + feature-based 폴더
+- 프론트: 배포된 `legacy-ui/simvex-ui-main` 유지
 - 백엔드: Fastify + TypeScript + 도메인 모듈
 - 공유 계약: `packages/shared`에서 타입 단일 소스 관리
 
@@ -17,7 +17,7 @@
 2. DB 스키마 설계 및 repository 구현 (완료)
 3. 모델/스터디/AI API 구현 (완료)
 4. 워크플로우/메모 API 구현 (완료)
-5. 프론트 페이지별 이식 (완료)
+5. legacy UI 배포 유지 및 미사용 Vite 프론트 제거 (완료)
 6. E2E 검증 및 성능 최적화 (진행 중)
 
 ## 현재 마무리 단계
