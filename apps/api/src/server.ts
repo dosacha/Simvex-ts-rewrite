@@ -5,7 +5,6 @@ import multipart from "@fastify/multipart";
 import { registerModelRoutes } from "./modules/models/routes";
 import { registerStudyRoutes } from "./modules/study/routes";
 import { registerAiRoutes } from "./modules/ai/routes";
-import { registerMemoRoutes } from "./modules/memos/routes";
 import { registerWorkflowRoutes } from "./modules/workflow/routes";
 import { registerMemoRoutesV2 } from "./interfaces/http/modules/memos/memo.routes";
 import { MemoService } from "./application/memos/memo.service";
@@ -41,14 +40,13 @@ export async function buildServer() {
     await registerModelRoutes(api);
     await registerStudyRoutes(api);
     await registerAiRoutes(api);
-    await registerMemoRoutes(api);
     await registerWorkflowRoutes(api);
 
     // v2 라우트 — 4계층 통과
     const memoService = new MemoService(repositories.memo);
     const memoController = new MemoController(memoService);
     await registerMemoRoutesV2(api, memoController);
-    
+
     api.get("/health", async () => ({ status: "ok" }));
   }, { prefix: "/api" });
 

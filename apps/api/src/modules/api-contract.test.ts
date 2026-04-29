@@ -104,7 +104,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
 
   const updateByOtherUser = await app.inject({
     method: "PUT",
-    url: `/api/memos/${createdMemo.id}`,
+    url: `/api/v2/memos/${createdMemo.id}`,
     headers: {
       "x-user-id": otherId,
       "content-type": "application/json",
@@ -115,7 +115,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
 
   const updateByOwner = await app.inject({
     method: "PUT",
-    url: `/api/memos/${createdMemo.id}`,
+    url: `/api/v2/memos/${createdMemo.id}`,
     headers: {
       "x-user-id": ownerId,
       "content-type": "application/json",
