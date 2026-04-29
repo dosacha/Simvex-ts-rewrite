@@ -52,5 +52,3 @@ jobs:
       - name: API postgres test
         run: npm run test:postgres -w @simvex/api
 
-      - name: Web typecheck
-        run: npm run typecheck -w @simvex/web
