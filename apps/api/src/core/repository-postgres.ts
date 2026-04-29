@@ -88,7 +88,7 @@ class PostgresMemoRepository implements MemoRepository {
     return created;
   }
 
-  async update(userId: string, memoId: number, payload: Pick<MemoItem, "title" | "content">): Promise<MemoItem | null> {
+  async update(userId: string, memoId: number, payload: Partial<Pick<MemoItem, "title" | "content">>): Promise<MemoItem | null> {
     const rows = await this.store.query<{ id: number; title: string; content: string }>(
       `UPDATE memos
        SET title = $1, content = $2
