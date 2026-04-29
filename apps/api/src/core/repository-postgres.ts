@@ -89,13 +89,27 @@ class PostgresMemoRepository implements MemoRepository {
   }
 
   async update(userId: string, memoId: number, payload: Partial<Pick<MemoItem, "title" | "content">>): Promise<MemoItem | null> {
-    const rows = await this.store.query<{ id: number; title: string; content: string }>(
-      `UPDATE memos
-       SET title = $1, content = $2
-       WHERE id = $3 AND user_id = $4
-       RETURNING id, title, content`,
-      [payload.title, payload.content, memoId, userId],
-    );
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if(payload.title !== undefined) {
+      fields.push(`title = $${values.length + 1}`);
+      values.push(payload.title);
+    }
+
+    if (payload.content !== undefined) {
+      fields.push(`content = $${values.length + 1}`);
+      values.push(payload.content);
+    }
+
+    if (fields.length === 0) return null;
+
+    const sql = `UPDATE memos SET ${fields.join(", ")} WHERE id = $${values.length + 1} AND user_id = $${values.length + 2} RETURNING id, title, content`;
+
+    values.push(memoId, userId);
+    
+    const rows = await this.store.query<{ id: number; title: string; content: string }>(sql, values);
+    
     return rows[0] ?? null;
   }
 
