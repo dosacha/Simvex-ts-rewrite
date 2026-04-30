@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { AiAskResponse } from "@simvex/shared";
 import type { AiService } from "../../../../application/ai/ai.service";
-import { ModelNotFoundError } from "../../../../application/ai/ai.service";
+import { ModelNotFoundError } from "../../../../domain/shared/errors";
 import { AiInputValidationError } from "../../../../domain/ai/ai.entity";
 
 export class AiController {

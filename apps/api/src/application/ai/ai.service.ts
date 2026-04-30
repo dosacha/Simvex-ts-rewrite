@@ -6,7 +6,6 @@ import {
   buildAnswer,
 } from "../../domain/ai/ai.entity";
 import { ModelNotFoundError } from "../../domain/shared/errors";
-export { ModelNotFoundError } from "../../domain/shared/errors";
 // catalog 의존성은 현재 단계에서 service 가 직접 호출.
 // 추후 catalog 가 동적 데이터로 진화하면 CatalogRepository 패턴으로 옮길 자리.
 import { findModelById, findPartsByModelId } from "../../core/catalog";
