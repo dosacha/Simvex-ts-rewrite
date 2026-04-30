@@ -75,4 +75,25 @@ export class WorkflowService {
     }): Promise<boolean> {
         return this.repo.deleteConnection(input.userId, input.connectionId);
     }
+
+    async deleteConnectionByIdOrPair(input: {
+        userId: string;
+        connectionId?: number;
+        from?: number;
+        to?: number;
+    }): Promise<boolean> {
+        let id = input.connectionId;
+        
+        if (id === undefined && input.from !== undefined && input.to !== undefined) {
+            const found = await this.repo.findConnectionIdByPair(input.userId, input.from, input.to);
+            if (found === null) return false;
+            id = found;
+        }
+        
+        if (id === undefined) {
+            throw new Error("connectionId 또는 from/to 가 필요합니다");
+        }
+        
+        return this.repo.deleteConnection(input.userId, id);
+    }
 }
