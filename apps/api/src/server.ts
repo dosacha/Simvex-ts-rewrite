@@ -2,7 +2,6 @@
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
-import { registerModelRoutes } from "./modules/models/routes";
 import { registerStudyRoutes } from "./modules/study/routes";
 import { registerWorkflowRoutes } from "./modules/workflow/routes";
 import { registerMemoRoutesV2 } from "./interfaces/http/modules/memos/memo.routes";
@@ -47,7 +46,6 @@ export async function buildServer() {
     },
   });
   await app.register(async (api) => {
-    await registerModelRoutes(api);
     await registerStudyRoutes(api);
     await registerWorkflowRoutes(api);
 

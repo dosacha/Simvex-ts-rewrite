@@ -92,7 +92,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
 
   const createRes = await app.inject({
     method: "POST",
-    url: `/api/models/${firstModel.id}/memos`,
+    url: `/api/v2/models/${firstModel.id}/memos`,
     headers: {
       "x-user-id": ownerId,
       "content-type": "application/json",
