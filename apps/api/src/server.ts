@@ -15,6 +15,9 @@ import { registerWorkflowRoutesV2 } from "./interfaces/http/modules/workflow/wor
 import { AiService } from "./application/ai/ai.service";
 import { AiController } from "./interfaces/http/modules/ai/ai.controller";
 import { registerAiRoutesV2 } from "./interfaces/http/modules/ai/ai.routes";
+import { ModelService } from "./application/models/model.service";
+import { ModelController } from "./interfaces/http/modules/models/model.controller";
+import { registerModelRoutesV2 } from "./interfaces/http/modules/models/model.routes";
 
 
 export async function buildServer() {
@@ -60,6 +63,11 @@ export async function buildServer() {
     const aiService = new AiService(repositories.aiHistory);
     const aiController = new AiController(aiService);
     await registerAiRoutesV2(api, aiController);
+
+    // v2 라우트 — models (catalog 조회, repository 없음)
+    const modelService = new ModelService();
+    const modelController = new ModelController(modelService);
+    await registerModelRoutesV2(api, modelController);
 
     api.get("/health", async () => ({ status: "ok" }));
   }, { prefix: "/api" });
