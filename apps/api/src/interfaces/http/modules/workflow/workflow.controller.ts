@@ -125,4 +125,50 @@ export class WorkflowController {
             return reply.code(400).send({ message });
         }
     }
+
+    async deleteConnection(
+        request: FastifyRequest<{ Querystring: { id?: string; from?: string; to?: string } }>,
+        reply: FastifyReply
+    ) {
+        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        
+        const idStr = request.query.id;
+        const fromStr = request.query.from;
+        const toStr = request.query.to;
+        
+        // id 또는 from/to 추출
+        const id = idStr !== undefined ? Number(idStr) : undefined;
+        const from = fromStr !== undefined ? Number(fromStr) : undefined;
+        const to = toStr !== undefined ? Number(toStr) : undefined;
+        
+        // 형식 검증
+        if (id === undefined && (from === undefined || to === undefined)) {
+            return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
+        }
+        
+        if (id !== undefined && !Number.isInteger(id)) {
+            return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
+        }
+        
+        if (id === undefined && (!Number.isInteger(from) || !Number.isInteger(to))) {
+            return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
+        }
+        
+        try {
+            const deleted = await this.service.deleteConnectionByIdOrPair({
+            userId,
+            ...(id !== undefined && { connectionId: id }),
+            ...(from !== undefined && { from }),
+            ...(to !== undefined && { to }),
+            });
+            
+            if (!deleted) {
+            return reply.code(404).send({ message: "연결을 찾을 수 없습니다." });
+            }
+            return reply.code(204).send();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "잘못된 요청입니다.";
+            return reply.code(400).send({ message });
+        }
+    }
 }

@@ -10,6 +10,9 @@ import { registerMemoRoutesV2 } from "./interfaces/http/modules/memos/memo.route
 import { MemoService } from "./application/memos/memo.service";
 import { MemoController } from "./interfaces/http/modules/memos/memo.controller";
 import { repositories } from "./core/repository";
+import { WorkflowService } from "./application/workflow/workflow.service";
+import { WorkflowController } from "./interfaces/http/modules/workflow/workflow.controller";
+import { registerWorkflowRoutesV2 } from "./interfaces/http/modules/workflow/workflow.routes";
 
 
 export async function buildServer() {
@@ -42,10 +45,15 @@ export async function buildServer() {
     await registerAiRoutes(api);
     await registerWorkflowRoutes(api);
 
-    // v2 라우트 — 4계층 통과
+    // v2 라우트 — memo
     const memoService = new MemoService(repositories.memo);
     const memoController = new MemoController(memoService);
     await registerMemoRoutesV2(api, memoController);
+
+    // v2 라우트 — workflow
+    const workflowService = new WorkflowService(repositories.workflow);
+    const workflowController = new WorkflowController(workflowService);
+    await registerWorkflowRoutesV2(api, workflowController);
 
     api.get("/health", async () => ({ status: "ok" }));
   }, { prefix: "/api" });
