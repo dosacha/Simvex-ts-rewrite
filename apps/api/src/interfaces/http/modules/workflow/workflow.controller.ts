@@ -8,7 +8,7 @@ export class WorkflowController {
         request: FastifyRequest<{ Body: { title?: string; content?: string; x?: number; y?: number } }>,
         reply: FastifyReply
     ) {
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
         
         const body = request.body;
         
@@ -40,7 +40,7 @@ export class WorkflowController {
             return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
         }
         
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
         
         const body = request.body;
         const title = body?.title;
@@ -78,7 +78,7 @@ export class WorkflowController {
             return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
         }
         
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
         
         try {
             const deleted = await this.service.deleteNode({ userId, nodeId });
@@ -104,7 +104,7 @@ export class WorkflowController {
             return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
         }
         
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
         
         try {
             const connection = await this.service.createConnection({
@@ -130,7 +130,7 @@ export class WorkflowController {
         request: FastifyRequest<{ Querystring: { id?: string; from?: string; to?: string } }>,
         reply: FastifyReply
     ) {
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
         
         const idStr = request.query.id;
         const fromStr = request.query.from;

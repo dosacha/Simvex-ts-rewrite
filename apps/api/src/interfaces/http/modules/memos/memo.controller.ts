@@ -17,7 +17,7 @@ export class MemoController {
         
         // 2. 입력 형식 검증 (id가 정수인지 등)
         //    - 잘못되면 reply.code(400).send(...)
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
 
         // 3. service.updateMemo 호출
         //    - try/catch — service의 throw 를 4xx로 변환
@@ -57,7 +57,7 @@ export class MemoController {
             return reply.code(400).send({ message: "유효한 메모 ID가 아닙니다." });
         }
         
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
 
         try {
             const deleted = await this.service.deleteMemo({ userId, memoId: id });
@@ -80,7 +80,7 @@ export class MemoController {
             return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
         }
 
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
 
         try {
             return await this.service.listByModel({ userId, modelId: id });
@@ -104,7 +104,7 @@ export class MemoController {
             return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
         }
 
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
 
         try {
             const memo = await this.service.createInModel({

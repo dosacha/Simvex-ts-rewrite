@@ -11,7 +11,7 @@ export class AiController {
     request: FastifyRequest<{ Body: { question?: string; modelId?: number; meshName?: string } }>,
     reply: FastifyReply,
   ) {
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
+    const userId = request.userId;
 
     const question = request.body?.question?.trim();
     const modelId = request.body?.modelId;
@@ -46,7 +46,7 @@ export class AiController {
       return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
     }
 
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
+    const userId = request.userId;
 
     try {
       return await this.service.listHistory({ userId, modelId });
