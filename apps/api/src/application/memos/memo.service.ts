@@ -1,5 +1,7 @@
 import type { MemoRepository } from "../../domain/memos/memo.repository";
 import type { MemoItem } from "@simvex/shared";
+import { findModelById } from "../../core/catalog";
+import { ModelNotFoundError } from "../../domain/shared/errors";
 
 export class MemoService {
   constructor(private readonly repo: MemoRepository) {}
@@ -48,5 +50,40 @@ export class MemoService {
         memoId: number;
     }): Promise<boolean> {
         return this.repo.delete(input.userId, input.memoId);
+    }
+
+    /**
+     * listByModel — 특정 모델의 사용자 메모 조회.
+     * modelId 가 catalog 에 존재하는지 검증 후 repository 조회.
+     */
+    async listByModel(input: {
+        userId: string;
+        modelId: number;
+    }): Promise<MemoItem[]> {
+        const model = findModelById(input.modelId);
+        if (!model) {
+            throw new ModelNotFoundError(input.modelId);
+        }
+        return this.repo.listByModel(input.userId, input.modelId);
+    }
+
+    /**
+     * createInModel — 특정 모델에 메모 생성.
+     * modelId 검증 + payload 정제 (기존 v1 동작 보존: title/content 빈 문자열 fallback).
+     */
+    async createInModel(input: {
+        userId: string;
+        modelId: number;
+        title?: string;
+        content?: string;
+    }): Promise<MemoItem> {
+        const model = findModelById(input.modelId);
+        if (!model) {
+            throw new ModelNotFoundError(input.modelId);
+        }
+        return this.repo.create(input.userId, input.modelId, {
+            title: input.title ?? "",
+            content: input.content ?? "",
+        });
     }
 }
