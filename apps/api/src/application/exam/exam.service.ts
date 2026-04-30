@@ -7,7 +7,7 @@ import {
 // catalog 의존성은 현재 단계에서 service 가 직접 호출.
 // 추후 catalog 가 동적 데이터로 진화하면 CatalogRepository 패턴으로 옮길 자리.
 import { generateExamQuestions, gradeExam } from "../../core/catalog";
-import type { ExamQuestion, ExamResultItem } from "@simvex/shared";
+import type { ExamQuestion, ExamResultResponse } from "@simvex/shared";
 
 export class ExamService {
     /**
@@ -30,12 +30,7 @@ export class ExamService {
      *
      * 채점 결과 (correctCount, total, results) 를 받아서 score 까지 추가하여 반환.
      */
-    gradeAndScore(input: { answers: unknown }): {
-        total: number;
-        correctCount: number;
-        score: number;
-        results: ExamResultItem[];
-    } {
+    gradeAndScore(input: { answers: unknown }): ExamResultResponse {
         validateAnswers(input.answers);  // assertion — 이후 input.answers 가 ExamSubmitRequest["answers"]
         
         const graded = gradeExam(input.answers);
