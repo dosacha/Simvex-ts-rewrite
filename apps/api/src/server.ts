@@ -20,6 +20,7 @@ import { registerModelRoutesV2 } from "./interfaces/http/modules/models/model.ro
 import { ExamService } from "./application/exam/exam.service";
 import { ExamController } from "./interfaces/http/modules/exam/exam.controller";
 import { registerExamRoutesV2 } from "./interfaces/http/modules/exam/exam.routes";
+import { registerAuthPlugin } from "./interfaces/http/plugins/auth.plugin";
 
 export async function buildServer() {
   const app = Fastify({ logger: true });
@@ -45,34 +46,38 @@ export async function buildServer() {
       fileSize: 20 * 1024 * 1024,
     },
   });
+  
   await app.register(async (api) => {
+    // legacy 라우트 — v1, 인증 미적용 (점진적 deprecate 예정)
     await registerStudyRoutes(api);
     await registerWorkflowRoutes(api);
 
-    // v2 라우트 — memo
-    const memoService = new MemoService(repositories.memo);
-    const memoController = new MemoController(memoService);
-    await registerMemoRoutesV2(api, memoController);
-
-    // v2 라우트 — workflow
-    const workflowService = new WorkflowService(repositories.workflow);
-    const workflowController = new WorkflowController(workflowService);
-    await registerWorkflowRoutesV2(api, workflowController);
-
-    // v2 라우트 — ai
-    const aiService = new AiService(repositories.aiHistory);
-    const aiController = new AiController(aiService);
-    await registerAiRoutesV2(api, aiController);
-
-    // v2 라우트 — models (catalog 조회, repository 없음)
+    // v2 공용 라우트 — 카탈로그 조회 (사용자별 데이터 아님, 인증 미적용)
     const modelService = new ModelService();
     const modelController = new ModelController(modelService);
     await registerModelRoutesV2(api, modelController);
 
-    // v2 라우트 — exam (catalog 조회, repository 없음)
     const examService = new ExamService();
     const examController = new ExamController(examService);
     await registerExamRoutesV2(api, examController);
+
+    // v2 인증 라우트 — 사용자별 리소스 (memo / workflow / ai)
+    // encapsulation: 이 register 안에서만 auth plugin hook 이 동작.
+    await api.register(async (authed) => {
+      await registerAuthPlugin(authed);
+
+      const memoService = new MemoService(repositories.memo);
+      const memoController = new MemoController(memoService);
+      await registerMemoRoutesV2(authed, memoController);
+
+      const workflowService = new WorkflowService(repositories.workflow);
+      const workflowController = new WorkflowController(workflowService);
+      await registerWorkflowRoutesV2(authed, workflowController);
+
+      const aiService = new AiService(repositories.aiHistory);
+      const aiController = new AiController(aiService);
+      await registerAiRoutesV2(authed, aiController);
+    });
 
     api.get("/health", async () => ({ status: "ok" }));
   }, { prefix: "/api" });
