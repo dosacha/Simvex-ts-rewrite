@@ -5,6 +5,8 @@ import {
   buildAskContext,
   buildAnswer,
 } from "../../domain/ai/ai.entity";
+import { ModelNotFoundError } from "../../domain/shared/errors";
+export { ModelNotFoundError } from "../../domain/shared/errors";
 // catalog 의존성은 현재 단계에서 service 가 직접 호출.
 // 추후 catalog 가 동적 데이터로 진화하면 CatalogRepository 패턴으로 옮길 자리.
 import { findModelById, findPartsByModelId } from "../../core/catalog";
@@ -77,10 +79,3 @@ export class AiService {
   }
 }
 
-/** service 가 throw 하는 비즈니스 에러 — controller 에서 404 로 변환할 자리. */
-export class ModelNotFoundError extends Error {
-  constructor(modelId: number) {
-    super(`모델을 찾을 수 없습니다 (id: ${modelId})`);
-    this.name = "ModelNotFoundError";
-  }
-}
