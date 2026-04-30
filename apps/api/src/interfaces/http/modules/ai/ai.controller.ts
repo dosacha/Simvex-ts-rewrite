@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import type { AiAskResponse } from "@simvex/shared";
 import type { AiService } from "../../../../application/ai/ai.service";
 import { ModelNotFoundError } from "../../../../application/ai/ai.service";
+import { AiInputValidationError } from "../../../../domain/ai/ai.entity";
 
 export class AiController {
   constructor(private readonly service: AiService) {}
@@ -28,7 +29,7 @@ export class AiController {
       if (error instanceof ModelNotFoundError) {
         return reply.code(404).send(this.buildErrorResponse("model not found"));
       }
-      if (error instanceof Error && (error.message === "question is required" || error.message === "modelId is required")) {
+      if (error instanceof AiInputValidationError) {
         return reply.code(400).send(this.buildErrorResponse(error.message));
       }
       request.log.error({ err: error }, "ai ask failed");

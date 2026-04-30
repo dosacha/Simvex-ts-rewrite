@@ -28,12 +28,12 @@ export function validateAskInput(input: {
 }): { question: string; modelId: number } {
   const question = input.question?.trim();
   if (!question) {
-    throw new Error("question is required");
+    throw new AiInputValidationError("question is required");
   }
 
   const modelId = input.modelId;
   if (!modelId || !Number.isInteger(modelId)) {
-    throw new Error("modelId is required");
+    throw new AiInputValidationError("modelId is required");
   }
 
   return { question, modelId };
@@ -58,4 +58,18 @@ export function buildAskContext(
     mode: "GLOBAL",
     partFound: false,
   };
+}
+
+/**
+ * validateAskInput 이 throw 하는 입력 검증 에러.
+ * controller 에서 400 으로 변환할 자리.
+ *
+ * 문자열 비교 대신 sentinel 패턴 — entity 의 에러 메시지가 바뀌어도
+ * controller 가 안 깨지도록 type 시스템에 정합 의도를 박는 자리.
+ */
+export class AiInputValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AiInputValidationError";
+  }
 }
