@@ -1,20 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { repositories } from "../../core/repository";
 
-interface NodePayload {
-  title?: string;
-  content?: string;
-  x?: number;
-  y?: number;
-}
-
-interface ConnectionPayload {
-  from?: number;
-  to?: number;
-  fromAnchor?: string;
-  toAnchor?: string;
-}
-
 function sanitizeFileName(fileName: string): string {
   const normalized = fileName.replace(/[\u0000-\u001f\u007f]+/g, "").trim();
   const noPath = normalized.replace(/[\\/]+/g, "_");
@@ -42,89 +28,6 @@ export async function registerWorkflowRoutes(app: FastifyInstance) {
       connections: workflow.connections,
     };
   });
-
-  app.post<{ Body: NodePayload }>("/workflow/nodes", async (request, reply) => {
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const node = await repositories.workflow.createNode(userId, {
-      title: request.body?.title ?? "새 노드",
-      content: request.body?.content ?? "",
-      x: request.body?.x ?? 200,
-      y: request.body?.y ?? 120,
-    });
-
-    return reply.code(201).send({ id: node.id });
-  });
-
-  app.put<{ Params: { id: string }; Body: NodePayload }>("/workflow/nodes/:id", async (request, reply) => {
-    const nodeId = Number(request.params.id);
-    if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
-
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const payload: NodePayload = {};
-    if (request.body?.title !== undefined) payload.title = request.body.title;
-    if (request.body?.content !== undefined) payload.content = request.body.content;
-    if (request.body?.x !== undefined) payload.x = request.body.x;
-    if (request.body?.y !== undefined) payload.y = request.body.y;
-
-    const updated = await repositories.workflow.updateNode(userId, nodeId, payload);
-    if (!updated) return reply.code(404).send({ message: "노드를 찾을 수 없습니다." });
-
-    return { message: "ok" };
-  });
-
-  app.delete<{ Params: { id: string } }>("/workflow/nodes/:id", async (request, reply) => {
-    const nodeId = Number(request.params.id);
-    if (!Number.isInteger(nodeId)) return reply.code(400).send({ message: "유효한 노드 ID가 아닙니다." });
-
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const deleted = await repositories.workflow.deleteNode(userId, nodeId);
-    if (!deleted) return reply.code(404).send({ message: "노드를 찾을 수 없습니다." });
-
-    return reply.code(204).send();
-  });
-
-  app.post<{ Body: ConnectionPayload }>("/workflow/connections", async (request, reply) => {
-    const from = Number(request.body?.from);
-    const to = Number(request.body?.to);
-    if (!Number.isInteger(from) || !Number.isInteger(to)) {
-      return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
-    }
-
-    const userId = String(request.headers["x-user-id"] ?? "default-guest");
-    const connection = await repositories.workflow.createConnection(userId, {
-      from,
-      to,
-      fromAnchor: request.body?.fromAnchor ?? "right",
-      toAnchor: request.body?.toAnchor ?? "left",
-    });
-    if (!connection) return reply.code(400).send({ message: "연결을 만들 수 없습니다." });
-
-    return reply.code(201).send(connection);
-  });
-
-  app.delete<{ Querystring: { id?: string; from?: string; to?: string } }>(
-    "/workflow/connections",
-    async (request, reply) => {
-      const userId = String(request.headers["x-user-id"] ?? "default-guest");
-      let id = Number(request.query.id);
-
-      if (!Number.isInteger(id)) {
-        const from = Number(request.query.from);
-        const to = Number(request.query.to);
-        if (!Number.isInteger(from) || !Number.isInteger(to)) {
-          return reply.code(400).send({ message: "유효한 연결 정보가 아닙니다." });
-        }
-
-        const found = await repositories.workflow.findConnectionIdByPair(userId, from, to);
-        if (!found) return reply.code(404).send({ message: "연결을 찾을 수 없습니다." });
-        id = found;
-      }
-
-      const deleted = await repositories.workflow.deleteConnection(userId, id);
-      if (!deleted) return reply.code(404).send({ message: "연결을 찾을 수 없습니다." });
-      return reply.code(204).send();
-    },
-  );
 
   app.post<{ Params: { nodeId: string } }>("/workflow/nodes/:nodeId/files", async (request, reply) => {
     const nodeId = Number(request.params.nodeId);

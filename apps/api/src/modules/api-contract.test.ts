@@ -140,7 +140,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const nodeARes = await app.inject({
     method: "POST",
-    url: "/api/workflow/nodes",
+    url: "/api/v2/workflow/nodes",
     headers: {
       "x-user-id": ownerId,
       "content-type": "application/json",
@@ -152,7 +152,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const nodeBRes = await app.inject({
     method: "POST",
-    url: "/api/workflow/nodes",
+    url: "/api/v2/workflow/nodes",
     headers: {
       "x-user-id": ownerId,
       "content-type": "application/json",
@@ -164,7 +164,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const createConnRes = await app.inject({
     method: "POST",
-    url: "/api/workflow/connections",
+    url: "/api/v2/workflow/connections",
     headers: {
       "x-user-id": ownerId,
       "content-type": "application/json",
@@ -198,7 +198,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const updateByOther = await app.inject({
     method: "PUT",
-    url: `/api/workflow/nodes/${nodeA.id}`,
+    url: `/api/v2/workflow/nodes/${nodeA.id}`,
     headers: {
       "x-user-id": otherId,
       "content-type": "application/json",
@@ -209,7 +209,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const deleteByOwner = await app.inject({
     method: "DELETE",
-    url: `/api/workflow/nodes/${nodeA.id}`,
+    url: `/api/v2/workflow/nodes/${nodeA.id}`,
     headers: { "x-user-id": ownerId },
   });
   assert.equal(deleteByOwner.statusCode, 204);
