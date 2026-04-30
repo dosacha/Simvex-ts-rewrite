@@ -13,6 +13,9 @@ import { repositories } from "./core/repository";
 import { WorkflowService } from "./application/workflow/workflow.service";
 import { WorkflowController } from "./interfaces/http/modules/workflow/workflow.controller";
 import { registerWorkflowRoutesV2 } from "./interfaces/http/modules/workflow/workflow.routes";
+import { AiService } from "./application/ai/ai.service";
+import { AiController } from "./interfaces/http/modules/ai/ai.controller";
+import { registerAiRoutesV2 } from "./interfaces/http/modules/ai/ai.routes";
 
 
 export async function buildServer() {
@@ -54,6 +57,11 @@ export async function buildServer() {
     const workflowService = new WorkflowService(repositories.workflow);
     const workflowController = new WorkflowController(workflowService);
     await registerWorkflowRoutesV2(api, workflowController);
+
+    // v2 라우트 — ai
+    const aiService = new AiService(repositories.aiHistory);
+    const aiController = new AiController(aiService);
+    await registerAiRoutesV2(api, aiController);
 
     api.get("/health", async () => ({ status: "ok" }));
   }, { prefix: "/api" });
