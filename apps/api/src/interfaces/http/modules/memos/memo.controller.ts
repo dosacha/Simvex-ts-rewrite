@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { MemoService } from "../../../../application/memos/memo.service";
+import { ModelNotFoundError } from "../../../../domain/shared/errors";
 
 export class MemoController {
     constructor(private readonly service: MemoService) {}
@@ -68,5 +69,56 @@ export class MemoController {
             const message = error instanceof Error ? error.message : "잘못된 요청입니다.";
             return reply.code(400).send({ message });
         }    
+    }
+
+    async listMemosByModel(
+        request: FastifyRequest<{ Params: { id: string } }>,
+        reply: FastifyReply,
+    ) {
+        const id = Number(request.params.id);
+        if (!Number.isInteger(id)) {
+            return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
+        }
+
+        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+
+        try {
+            return await this.service.listByModel({ userId, modelId: id });
+        } catch (error) {
+            if (error instanceof ModelNotFoundError) {
+            return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
+            }
+            throw error;
+        }
+    }
+
+    async createMemoInModel(
+        request: FastifyRequest<{ 
+            Params: { id: string }; 
+            Body: { title?: string; content?: string };
+        }>,
+        reply: FastifyReply,
+    ) {
+        const id = Number(request.params.id);
+        if (!Number.isInteger(id)) {
+            return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
+        }
+
+        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+
+        try {
+            const memo = await this.service.createInModel({
+            userId,
+            modelId: id,
+            ...(request.body?.title !== undefined && { title: request.body.title }),
+            ...(request.body?.content !== undefined && { content: request.body.content }),
+            });
+            return reply.code(201).send(memo);
+        } catch (error) {
+            if (error instanceof ModelNotFoundError) {
+            return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
+            }
+            throw error;
+        }
     }
 }
