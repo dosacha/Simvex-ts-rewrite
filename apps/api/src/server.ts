@@ -18,7 +18,9 @@ import { registerAiRoutesV2 } from "./interfaces/http/modules/ai/ai.routes";
 import { ModelService } from "./application/models/model.service";
 import { ModelController } from "./interfaces/http/modules/models/model.controller";
 import { registerModelRoutesV2 } from "./interfaces/http/modules/models/model.routes";
-
+import { ExamService } from "./application/exam/exam.service";
+import { ExamController } from "./interfaces/http/modules/exam/exam.controller";
+import { registerExamRoutesV2 } from "./interfaces/http/modules/exam/exam.routes";
 
 export async function buildServer() {
   const app = Fastify({ logger: true });
@@ -68,6 +70,11 @@ export async function buildServer() {
     const modelService = new ModelService();
     const modelController = new ModelController(modelService);
     await registerModelRoutesV2(api, modelController);
+
+    // v2 라우트 — exam (catalog 조회, repository 없음)
+    const examService = new ExamService();
+    const examController = new ExamController(examService);
+    await registerExamRoutesV2(api, examController);
 
     api.get("/health", async () => ({ status: "ok" }));
   }, { prefix: "/api" });
