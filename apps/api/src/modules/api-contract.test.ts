@@ -520,3 +520,96 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   });
   assert.equal(badQueryId.statusCode, 400);
 });
+
+test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차단됨", async (t) => {
+  const fixtureDir = createImportFixture();
+  setCatalogImportDir(fixtureDir);
+
+  const app = await buildServer();
+  t.after(() => app.close());
+
+  const userId = makeUserId("ai-schema");
+
+  // 모델 ID 확보
+  const modelRes = await app.inject({ method: "GET", url: "/api/v2/models" });
+  const models = modelRes.json() as Array<{ id: number }>;
+  const firstModel = models[0];
+  assert.ok(firstModel);
+
+  // ─── POST /v2/ai/ask schema 검증 ────────────────────────────────────────
+
+  // 케이스 1: question 누락 → 400 (이전엔 entity 의 AiInputValidationError 가 잡았음)
+  const noQuestion = await app.inject({
+    method: "POST",
+    url: "/api/v2/ai/ask",
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { modelId: firstModel.id },
+  });
+  assert.equal(noQuestion.statusCode, 400);
+
+  // 케이스 2: modelId 누락 → 400
+  const noModelId = await app.inject({
+    method: "POST",
+    url: "/api/v2/ai/ask",
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { question: "테스트?" },
+  });
+  assert.equal(noModelId.statusCode, 400);
+
+  // 케이스 3: question 이 빈 문자열 → 400 (minLength: 1)
+  const emptyQuestion = await app.inject({
+    method: "POST",
+    url: "/api/v2/ai/ask",
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { question: "", modelId: firstModel.id },
+  });
+  assert.equal(emptyQuestion.statusCode, 400);
+
+  // 케이스 4: modelId 가 정수가 아닌 실수 → 400 (integer)
+  const modelIdNotInt = await app.inject({
+    method: "POST",
+    url: "/api/v2/ai/ask",
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { question: "ok", modelId: 1.5 },
+  });
+  assert.equal(modelIdNotInt.statusCode, 400);
+
+  // 케이스 5: question 이 maxLength 초과 → 400
+  const tooLongQuestion = await app.inject({
+    method: "POST",
+    url: "/api/v2/ai/ask",
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { question: "x".repeat(2001), modelId: firstModel.id },
+  });
+  assert.equal(tooLongQuestion.statusCode, 400);
+
+  // 케이스 6: meshName 이 optional 이라 없어도 통과 (글로벌 모드)
+  const globalMode = await app.inject({
+    method: "POST",
+    url: "/api/v2/ai/ask",
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { question: "글로벌 질문", modelId: firstModel.id },
+  });
+  assert.equal(globalMode.statusCode, 200);
+  const globalResult = globalMode.json() as { mode: string };
+  assert.equal(globalResult.mode, "GLOBAL");
+
+  // ─── GET /v2/ai/history/:modelId schema 검증 ────────────────────────────
+
+  // 케이스 7: params.modelId 가 숫자가 아님 → 400
+  const invalidParams = await app.inject({
+    method: "GET",
+    url: "/api/v2/ai/history/abc",
+    headers: { "x-user-id": userId },
+  });
+  assert.equal(invalidParams.statusCode, 400);
+
+  // 케이스 8: 존재하지 않는 modelId → 404 (schema 통과 후 service 의 ModelNotFoundError)
+  // schema 와 비즈니스 흐름의 책임 분리 증거.
+  const unknownModel = await app.inject({
+    method: "GET",
+    url: "/api/v2/ai/history/99999",
+    headers: { "x-user-id": userId },
+  });
+  assert.equal(unknownModel.statusCode, 404);
+});
