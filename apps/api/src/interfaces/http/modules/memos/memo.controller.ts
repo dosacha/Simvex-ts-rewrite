@@ -5,118 +5,82 @@ import { ModelNotFoundError } from "../../../../domain/shared/errors";
 export class MemoController {
     constructor(private readonly service: MemoService) {}
     
-    async updateMemo(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-        // 1. request에서 입력 추출
-        //    - id (URL params)
-        //    - userId (header)
-        //    - title, content (body, 선택적)
-        const id = Number(request.params.id);
-        if(!Number.isInteger(id)) {
-            return reply.code(400).send({message: "유효한 메모 ID가 아닙니다."});
-        }
-        
-        // 2. 입력 형식 검증 (id가 정수인지 등)
-        //    - 잘못되면 reply.code(400).send(...)
+    async updateMemo(
+        request: FastifyRequest<{
+            Params: { id: string };
+            Body: { title?: string; content?: string };
+        }>,
+        reply: FastifyReply,
+    ) {
+        // schema 가 params.id (숫자 문자열) 와 body 의 minProperties/maxLength 를 이미 보장.
+        // controller 는 신뢰된 입력을 service 로 전달만 한다.
+        const memoId = Number(request.params.id);
         const userId = request.userId;
+        const { title, content } = request.body;
 
-        // 3. service.updateMemo 호출
-        //    - try/catch — service의 throw 를 4xx로 변환
-        const body = request.body as { title?: string; content?: string} | undefined;
-        const title = body?.title;
-        const content = body?.content;
+        const updated = await this.service.updateMemo({
+            userId,
+            memoId,
+            ...(title !== undefined && { title }),
+            ...(content !== undefined && { content }),
+        });
 
-        // 4. 결과에 따라 응답
-        //    - null이면 404
-        //    - 성공이면 200 + 결과
-        try {
-            const updated = await this.service.updateMemo({
-                userId,
-                memoId: id,
-                ...(title !== undefined && { title }),
-                ...(content !== undefined && { content }),
-            });
-        
-            if (updated === null) {
-                return reply.code(404).send({ message: "메모를 찾을 수 없습니다." });
-            }
-        
-            return reply.code(200).send(updated);
-        } catch (error) {
-            // service가 throw한 비즈니스 규칙 위반
-            const message = error instanceof Error ? error.message : "잘못된 요청입니다.";
-            return reply.code(400).send({ message });
+        if (updated === null) {
+            return reply.code(404).send({ message: "메모를 찾을 수 없습니다." });
         }
+
+        return reply.code(200).send(updated);
     }
 
     async deleteMemo(
         request: FastifyRequest<{ Params: { id: string } }>,
-        reply: FastifyReply
+        reply: FastifyReply,
     ) {
-        const id = Number(request.params.id);
-        if (!Number.isInteger(id)) {
-            return reply.code(400).send({ message: "유효한 메모 ID가 아닙니다." });
-        }
-        
+        const memoId = Number(request.params.id);
         const userId = request.userId;
 
-        try {
-            const deleted = await this.service.deleteMemo({ userId, memoId: id });
-            if (!deleted) {
-                return reply.code(404).send({ message: "메모를 찾을 수 없습니다." });
-            }
-            return reply.code(204).send();
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "잘못된 요청입니다.";
-            return reply.code(400).send({ message });
-        }    
+        const deleted = await this.service.deleteMemo({ userId, memoId });
+        if (!deleted) {
+            return reply.code(404).send({ message: "메모를 찾을 수 없습니다." });
+        }
+        return reply.code(204).send();
     }
 
     async listMemosByModel(
         request: FastifyRequest<{ Params: { id: string } }>,
         reply: FastifyReply,
     ) {
-        const id = Number(request.params.id);
-        if (!Number.isInteger(id)) {
-            return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
-        }
-
+        const modelId = Number(request.params.id);
         const userId = request.userId;
 
         try {
-            return await this.service.listByModel({ userId, modelId: id });
+            return await this.service.listByModel({ userId, modelId });
         } catch (error) {
             if (error instanceof ModelNotFoundError) {
-            return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
+                return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
             }
             throw error;
         }
     }
 
     async createMemoInModel(
-        request: FastifyRequest<{ 
-            Params: { id: string }; 
-            Body: { title?: string; content?: string };
+        request: FastifyRequest<{
+            Params: { id: string };
+            Body: { title: string; content: string };
         }>,
         reply: FastifyReply,
     ) {
-        const id = Number(request.params.id);
-        if (!Number.isInteger(id)) {
-            return reply.code(400).send({ message: "유효한 모델 ID가 아닙니다." });
-        }
-
+        // schema 가 title, content 를 required + 길이 제한까지 모두 보장.
+        const modelId = Number(request.params.id);
         const userId = request.userId;
+        const { title, content } = request.body;
 
         try {
-            const memo = await this.service.createInModel({
-            userId,
-            modelId: id,
-            ...(request.body?.title !== undefined && { title: request.body.title }),
-            ...(request.body?.content !== undefined && { content: request.body.content }),
-            });
+            const memo = await this.service.createInModel({ userId, modelId, title, content });
             return reply.code(201).send(memo);
         } catch (error) {
             if (error instanceof ModelNotFoundError) {
-            return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
+                return reply.code(404).send({ message: "모델을 찾을 수 없습니다." });
             }
             throw error;
         }

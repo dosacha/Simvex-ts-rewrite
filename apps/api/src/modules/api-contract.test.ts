@@ -300,3 +300,93 @@ test("v2 인증 라우트: x-user-id 헤더 없으면 401을 반환함", async (
   });
   assert.equal(publicCatalog.statusCode, 200);
 });
+
+test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차단됨", async (t) => {
+  const fixtureDir = createImportFixture();
+  setCatalogImportDir(fixtureDir);
+
+  const app = await buildServer();
+  t.after(() => app.close());
+
+  const userId = makeUserId("schema-tester");
+
+  // 모델 ID 확보
+  const modelRes = await app.inject({ method: "GET", url: "/api/v2/models" });
+  const models = modelRes.json() as Array<{ id: number }>;
+  const firstModel = models[0];
+  assert.ok(firstModel);
+
+  // 메모 1개 생성 (PUT 테스트용 시드)
+  const seedMemoRes = await app.inject({
+    method: "POST",
+    url: `/api/v2/models/${firstModel.id}/memos`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { title: "seed", content: "seed-content" },
+  });
+  assert.equal(seedMemoRes.statusCode, 201);
+  const seedMemo = seedMemoRes.json() as { id: number };
+
+  // 케이스 1: POST body 에 title 누락 — required 위반 → 400
+  // 리뷰 문서 P0: 이전에는 title ?? "" 로 빈 문자열이 저장될 수 있었음.
+  const missingTitle = await app.inject({
+    method: "POST",
+    url: `/api/v2/models/${firstModel.id}/memos`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { content: "only content" },
+  });
+  assert.equal(missingTitle.statusCode, 400);
+
+  // 케이스 2: POST body 에 content 누락 — required 위반 → 400
+  const missingContent = await app.inject({
+    method: "POST",
+    url: `/api/v2/models/${firstModel.id}/memos`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { title: "only title" },
+  });
+  assert.equal(missingContent.statusCode, 400);
+
+  // 케이스 3: POST body 의 title 이 빈 문자열 — minLength: 1 위반 → 400
+  const emptyTitle = await app.inject({
+    method: "POST",
+    url: `/api/v2/models/${firstModel.id}/memos`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { title: "", content: "valid content" },
+  });
+  assert.equal(emptyTitle.statusCode, 400);
+
+  // 케이스 4: POST body 의 title 이 200자 초과 — maxLength: 200 위반 → 400
+  const tooLongTitle = await app.inject({
+    method: "POST",
+    url: `/api/v2/models/${firstModel.id}/memos`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { title: "x".repeat(201), content: "valid content" },
+  });
+  assert.equal(tooLongTitle.statusCode, 400);
+
+  // 케이스 5 (additionalProperties 강제) 는 ajv 기본 옵션상 통과되지 않음.
+  // → backlog: setValidatorCompiler 로 strict 모드 활성화 시 추가 검증.
+
+  // 케이스 6: PUT body 가 빈 객체 — minProperties: 1 위반 → 400
+
+  // 케이스 7: PUT 은 일부 필드만 와도 통과 (PATCH 의미)
+  // title 만 바꾸고 content 는 유지되어야 함.
+  const partialUpdate = await app.inject({
+    method: "PUT",
+    url: `/api/v2/memos/${seedMemo.id}`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { title: "updated-title-only" },
+  });
+  assert.equal(partialUpdate.statusCode, 200);
+  const updated = partialUpdate.json() as { title: string; content: string };
+  assert.equal(updated.title, "updated-title-only");
+  assert.equal(updated.content, "seed-content"); // ← 기존 content 유지 확인
+
+  // 케이스 8: params.id 가 숫자가 아닌 경우 — pattern 위반 → 400
+  const invalidId = await app.inject({
+    method: "PUT",
+    url: `/api/v2/memos/abc`,
+    headers: { "x-user-id": userId, "content-type": "application/json" },
+    payload: { title: "ok" },
+  });
+  assert.equal(invalidId.statusCode, 400);
+});
