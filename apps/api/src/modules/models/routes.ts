@@ -2,46 +2,14 @@
 import type { ExamSubmitRequest } from "@simvex/shared";
 import {
   findModelById,
-  findPartsByModelId,
-  findQuizzesByModelId,
   generateExamQuestions,
-  getCatalogStore,
   gradeExam,
 } from "../../core/catalog";
 import { repositories } from "../../core/repository";
 
 export async function registerModelRoutes(app: FastifyInstance) {
-  app.get("/models", async () => getCatalogStore().models);
-
-  app.get<{ Params: { id: string } }>("/models/:id", async (request, reply) => {
-    const id = Number(request.params.id);
-    if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
-
-    const model = findModelById(id);
-    if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
-
-    return model;
-  });
-
-  app.get<{ Params: { id: string } }>("/models/:id/parts", async (request, reply) => {
-    const id = Number(request.params.id);
-    if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
-
-    const model = findModelById(id);
-    if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
-
-    return findPartsByModelId(id);
-  });
-
-  app.get<{ Params: { id: string } }>("/models/:id/quizzes", async (request, reply) => {
-    const id = Number(request.params.id);
-    if (!Number.isInteger(id)) return reply.code(400).send({ message: "유효한 모델 ID가 아님." });
-
-    const model = findModelById(id);
-    if (!model) return reply.code(404).send({ message: "모델을 찾지 못함." });
-
-    return findQuizzesByModelId(id).map(({ answer: _answer, ...quiz }) => quiz);
-  });
+  // models 메인 4개 라우트 (GET /models, /models/:id, /models/:id/parts, /models/:id/quizzes) 는
+  // v2 라우트로 이전 완료. 아래는 exam + memos 라우트만 남김.
 
   app.get<{ Querystring: { modelIds?: string; count?: string } }>("/models/exam", async (request, reply) => {
     const idsText = request.query.modelIds?.trim();

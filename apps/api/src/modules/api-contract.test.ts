@@ -51,20 +51,20 @@ test("GET /api/study/catalog: domain query 없이 기본 도메인으로 응답�
   assert.equal(payload.categories.length, 1);
 });
 
-test("GET /api/models/:id/quizzes: answer 필드를 노출하지 않음", async (t) => {
+test("GET /api/v2/models/:id/quizzes: answer 필드를 노출하지 않음", async (t) => {
   const fixtureDir = createImportFixture();
   setCatalogImportDir(fixtureDir);
 
   const app = await buildServer();
   t.after(() => app.close());
 
-  const modelRes = await app.inject({ method: "GET", url: "/api/models" });
+  const modelRes = await app.inject({ method: "GET", url: "/api/v2/models" });
   assert.equal(modelRes.statusCode, 200);
   const models = modelRes.json() as Array<{ id: number }>;
   const firstModel = models[0];
   assert.ok(firstModel);
 
-  const quizRes = await app.inject({ method: "GET", url: `/api/models/${firstModel.id}/quizzes` });
+  const quizRes = await app.inject({ method: "GET", url: `/api/v2/models/${firstModel.id}/quizzes` });
   assert.equal(quizRes.statusCode, 200);
   const quizzes = quizRes.json() as Array<Record<string, unknown>>;
   assert.equal(quizzes.length, 1);
@@ -81,7 +81,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
   const app = await buildServer();
   t.after(() => app.close());
 
-  const modelRes = await app.inject({ method: "GET", url: "/api/models" });
+  const modelRes = await app.inject({ method: "GET", url: "/api/v2/models" });
   assert.equal(modelRes.statusCode, 200);
   const models = modelRes.json() as Array<{ id: number }>;
   const firstModel = models[0];
@@ -230,7 +230,7 @@ test("POST /api/ai/ask: 내부 오류 발생 시 마스킹된 에러를 반환�
     repositories.aiHistory.append = originalAppend;
   });
 
-  const modelRes = await app.inject({ method: "GET", url: "/api/models" });
+  const modelRes = await app.inject({ method: "GET", url: "/api/v2/models" });
   assert.equal(modelRes.statusCode, 200);
   const models = modelRes.json() as Array<{ id: number }>;
   const firstModel = models[0];
