@@ -269,11 +269,12 @@ class PostgresWorkflowRepository implements WorkflowRepository {
   }
 
   async deleteNode(userId: string, nodeId: number): Promise<boolean> {
-    await this.store.query(`DELETE FROM workflow_files WHERE user_id = $1 AND node_id = $2`, [userId, nodeId]);
-    await this.store.query(
-      `DELETE FROM workflow_connections WHERE user_id = $1 AND (from_node_id = $2 OR to_node_id = $2)`,
-      [userId, nodeId],
-    );
+    // 단일 SQL 로 충분 — 자식 테이블 (workflow_files, workflow_connections) 은
+    // 003_constraints.sql 의 ON DELETE CASCADE 가 자동 정리한다.
+    //
+    // 이전엔 3개의 SQL 을 순차 호출했다 — 트랜잭션 없이. 중간 실패 시 고아 connection
+    // 이 남는 위험한 구조였다. 그러나 DB constraint 가 이미 원자적 삭제를 보장하고
+    // 있었으므로 코드를 단순화하고 DB 의 의도에 위임했다.
     const rows = await this.store.query<{ id: number }>(
       `DELETE FROM workflow_nodes WHERE user_id = $1 AND id = $2 RETURNING id`,
       [userId, nodeId],

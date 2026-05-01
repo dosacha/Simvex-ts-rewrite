@@ -379,12 +379,22 @@ class InMemoryWorkflowRepository implements WorkflowRepository {
   }
 
   async deleteNode(userId: string, nodeId: number): Promise<boolean> {
+    // in-memory driver 의 deleteNode.
+    //
+    // postgres 와의 차이:
+    //   - postgres: ON DELETE CASCADE 로 자식 (files, connections) 자동 삭제
+    //   - in-memory: 트리 구조라 node 객체에 files 가 중첩됨.
+    //                node 제거 시 자식 files 동반 제거 (자연스럽게).
+    //                connections 는 별도 배열이라 명시적으로 필터링.
+    //
+    // 두 driver 가 같은 결과를 보장하지만 메커니즘이 다른 의도된 차이다.
     const state = this.ensureState(userId);
     const prevLength = state.nodes.length;
     state.nodes = state.nodes.filter((node) => node.id !== nodeId);
     if (state.nodes.length === prevLength) return false;
-
-    state.connections = state.connections.filter((connection) => connection.from !== nodeId && connection.to !== nodeId);
+    state.connections = state.connections.filter(
+      (connection) => connection.from !== nodeId && connection.to !== nodeId,
+    );
     this.store.save();
     return true;
   }

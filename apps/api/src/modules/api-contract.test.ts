@@ -213,6 +213,23 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
     headers: { "x-user-id": ownerId },
   });
   assert.equal(deleteByOwner.statusCode, 204);
+
+  // ─── nodeA 삭제 후 그 nodeA 를 가리키던 connection 도 사라졌는지 확인 ───
+  // postgres: ON DELETE CASCADE 가 자동 정리 (003_constraints.sql)
+  // in-memory: deleteNode 가 connection 배열을 직접 필터링
+  // 두 driver 의 메커니즘은 다르지만 같은 결과를 보장 — 이 테스트가 그 계약을 고정한다.
+  const afterDelete = await app.inject({
+    method: "GET",
+    url: "/api/workflow",
+    headers: { "x-user-id": ownerId },
+  });
+  assert.equal(afterDelete.statusCode, 200);
+  const remaining = afterDelete.json() as {
+    nodes: Array<{ id: number }>;
+    connections: Array<{ id: number; from: number; to: number }>;
+  };
+  assert.equal(remaining.nodes.length, 1, "nodeA 만 삭제됐어야 함 (nodeB 는 유지)");
+  assert.equal(remaining.connections.length, 0, "nodeA 를 가리키던 connection 도 동반 삭제되어야 함");
 });
 
 test("POST /api/ai/ask: 내부 오류 발생 시 마스킹된 에러를 반환함", async (t) => {
