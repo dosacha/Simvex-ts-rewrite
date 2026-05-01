@@ -21,6 +21,9 @@ import { ExamService } from "./application/exam/exam.service";
 import { ExamController } from "./interfaces/http/modules/exam/exam.controller";
 import { registerExamRoutesV2 } from "./interfaces/http/modules/exam/exam.routes";
 import { registerAuthPlugin } from "./interfaces/http/plugins/auth.plugin";
+import { WorkflowFileService } from "./application/workflow/file.service";
+import { WorkflowFileController } from "./interfaces/http/modules/workflow/file.controller";
+import { registerWorkflowFileRoutesV2 } from "./interfaces/http/modules/workflow/file.routes";
 
 export async function buildServer() {
   const app = Fastify({ logger: true });
@@ -73,6 +76,10 @@ export async function buildServer() {
       const workflowService = new WorkflowService(repositories.workflow);
       const workflowController = new WorkflowController(workflowService);
       await registerWorkflowRoutesV2(authed, workflowController);
+
+      const workflowFileService = new WorkflowFileService(repositories.workflow);
+      const workflowFileController = new WorkflowFileController(workflowFileService);
+      await registerWorkflowFileRoutesV2(authed, workflowFileController);
 
       const aiService = new AiService(repositories.aiHistory);
       const aiController = new AiController(aiService);
