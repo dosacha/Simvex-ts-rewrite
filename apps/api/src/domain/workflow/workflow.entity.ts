@@ -1,5 +1,4 @@
-import { WorkflowNode, WorkflowConnection } from "../../core/repository";
-
+import { WorkflowNode, WorkflowConnection, WorkflowFile, WorkflowState } from "../../core/repository";
 export type { WorkflowNode, WorkflowConnection } from "../../core/repository";
 
 /**
@@ -64,5 +63,65 @@ export function createConnection(input: {
         to: input.to,
         fromAnchor: input.fromAnchor,
         toAnchor: input.toAnchor,
+    };
+}
+
+// ────────────────────────────────────────────────
+// 응답 변환 (HTTP DTO)
+// ────────────────────────────────────────────────
+
+export interface FileUrlReference {
+    id: number;
+    fileName: string;
+    url: string;
+}
+
+export interface NodeResponse {
+    id: number;
+    title: string;
+    content: string;
+    x: number;
+    y: number;
+    files: FileUrlReference[];
+}
+
+export interface WorkflowResponse {
+    nodes: NodeResponse[];
+    connections: WorkflowConnection[];
+}
+
+/**
+ * Workflow 도메인 객체 → HTTP 응답 DTO 변환.
+ *
+ * 책임:
+ *   - file URL 을 v2 download endpoint 로 정규화 (/api/v2/workflow/files/:id)
+ *   - file 의 buffer / contentType 같은 내부 필드는 응답에서 제외
+ *   - connection 은 도메인 모양 그대로 유출 (현재 단계에선 충분)
+ *
+ * file.entity 의 buildFileResponse 와 같은 패턴 — entity 가 응답 모양 책임.
+ */
+export function buildWorkflowResponse(workflow: WorkflowState): WorkflowResponse {
+    return {
+        nodes: workflow.nodes.map(buildNodeResponse),
+        connections: workflow.connections,
+    };
+}
+
+function buildNodeResponse(node: WorkflowNode): NodeResponse {
+    return {
+        id: node.id,
+        title: node.title,
+        content: node.content,
+        x: node.x,
+        y: node.y,
+        files: node.files.map(buildFileUrlReference),
+    };
+}
+
+function buildFileUrlReference(file: WorkflowFile): FileUrlReference {
+    return {
+        id: file.id,
+        fileName: file.fileName,
+        url: `/api/v2/workflow/files/${file.id}`,
     };
 }

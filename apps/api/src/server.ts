@@ -3,7 +3,6 @@ import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { registerStudyRoutes } from "./modules/study/routes";
-import { registerWorkflowRoutes } from "./modules/workflow/routes";
 import { registerMemoRoutesV2 } from "./interfaces/http/modules/memos/memo.routes";
 import { MemoService } from "./application/memos/memo.service";
 import { MemoController } from "./interfaces/http/modules/memos/memo.controller";
@@ -53,7 +52,6 @@ export async function buildServer() {
   await app.register(async (api) => {
     // legacy 라우트 — v1, 인증 미적용 (점진적 deprecate 예정)
     await registerStudyRoutes(api);
-    await registerWorkflowRoutes(api);
 
     // v2 공용 라우트 — 카탈로그 조회 (사용자별 데이터 아님, 인증 미적용)
     const modelService = new ModelService();

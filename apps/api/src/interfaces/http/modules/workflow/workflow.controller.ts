@@ -146,4 +146,13 @@ export class WorkflowController {
             return reply.code(400).send({ message });
         }
     }
+
+    async getWorkflow(
+        request: FastifyRequest,
+        reply: FastifyReply
+    ) {
+        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const response = await this.service.getWorkflowForUser(userId);
+        return reply.code(200).send(response);
+    }
 }

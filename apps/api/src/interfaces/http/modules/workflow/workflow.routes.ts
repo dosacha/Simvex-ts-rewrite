@@ -63,4 +63,8 @@ export async function registerWorkflowRoutesV2(
         },
         (request, reply) => controller.deleteConnection(request, reply),
     );
+
+    app.get("/v2/workflow", (request, reply) => 
+        controller.getWorkflow(request, reply)
+    );
 }

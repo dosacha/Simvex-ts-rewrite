@@ -2,7 +2,9 @@ import type { WorkflowRepository, WorkflowNode, WorkflowConnection } from "../..
 import { 
   createNode as createNodeEntity, 
   updateNode as updateNodeEntity,
-  createConnection as createConnectionEntity 
+  createConnection as createConnectionEntity,
+  buildWorkflowResponse,
+  type WorkflowResponse,
 } from "../../domain/workflow/workflow.entity";
 
 export class WorkflowService {
@@ -95,5 +97,10 @@ export class WorkflowService {
         }
         
         return this.repo.deleteConnection(input.userId, id);
+    }
+
+    async getWorkflowForUser(userId: string): Promise<WorkflowResponse> {
+        const workflow = await this.repo.list(userId);
+        return buildWorkflowResponse(workflow);
     }
 }

@@ -175,7 +175,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const ownerList = await app.inject({
     method: "GET",
-    url: "/api/workflow",
+    url: "/api/v2/workflow",
     headers: { "x-user-id": ownerId },
   });
   assert.equal(ownerList.statusCode, 200);
@@ -188,7 +188,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
 
   const otherList = await app.inject({
     method: "GET",
-    url: "/api/workflow",
+    url: "/api/v2/workflow",
     headers: { "x-user-id": otherId },
   });
   assert.equal(otherList.statusCode, 200);
@@ -220,7 +220,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
   // 두 driver 의 메커니즘은 다르지만 같은 결과를 보장 — 이 테스트가 그 계약을 고정한다.
   const afterDelete = await app.inject({
     method: "GET",
-    url: "/api/workflow",
+    url: "/api/v2/workflow",
     headers: { "x-user-id": ownerId },
   });
   assert.equal(afterDelete.statusCode, 200);
