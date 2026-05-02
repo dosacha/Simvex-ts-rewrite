@@ -147,11 +147,16 @@ export class WorkflowController {
         }
     }
 
+    /**
+     * GET /v2/workflow
+     * 인증된 사용자의 노드 + connection + file URL 응답.
+     * service 가 entity buildWorkflowResponse 로 변환된 DTO 반환.
+     */
     async getWorkflow(
         request: FastifyRequest,
-        reply: FastifyReply
+        reply: FastifyReply,
     ) {
-        const userId = String(request.headers["x-user-id"] ?? "default-guest");
+        const userId = request.userId;
         const response = await this.service.getWorkflowForUser(userId);
         return reply.code(200).send(response);
     }
