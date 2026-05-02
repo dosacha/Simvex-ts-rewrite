@@ -32,7 +32,7 @@ export class AiController {
                 return reply.code(404).send(this.buildErrorResponse("model not found"));
             }
             request.log.error({ err: error }, "ai ask failed");
-            return reply.code(502).send(this.buildErrorResponse("ai service unavailable"));
+            return reply.code(500).send(this.buildErrorResponse("ai service unavailable"));
         }
     }
 
