@@ -1,11 +1,13 @@
 /**
  * Workflow 라우트의 JSON Schema 정의.
  *
- * 책임 분리:
- *   - schema = 형식 검증 (필드 존재, 타입, 길이, 패턴)
- *   - entity = 도메인 규칙 검증 (자기 연결 금지 등)
+ * 책임 분리 (전 도메인 공통 패턴):
+ *   - schema (이 파일)   = 형식 검증 (필드 존재, 타입, 길이, 패턴) — 1차 방어
+ *   - entity             = 도메인 규칙 검증 (예: connection.from !== connection.to) — 2차 방어
+ *   - repository         = 권한 격리 (user_id 조건) — 3차 방어
  *
- * 즉 schema 통과 후에도 entity 에서 한 번 더 검증된다 (다층 방어).
+ * workflow connection 은 from!==to 같은 도메인 규칙이 있어서 entity 가 살아있다.
+ * memo 는 도메인 규칙이 권한 격리뿐이라 entity 가 비어있다 (도메인 차이).
  */
 
 // ─── Node 라우트 ────────────────────────────────────────────────────────────

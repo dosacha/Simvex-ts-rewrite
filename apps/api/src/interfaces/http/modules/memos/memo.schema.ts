@@ -1,12 +1,14 @@
 /**
  * Memo 라우트의 JSON Schema 정의.
  *
- * 책임:
- *   - body / params / querystring 의 런타임 검증 (Fastify 가 ajv 로 자동 처리)
- *   - 검증 실패 시 Fastify 가 자동으로 400 반환
+ * 책임 분리 (전 도메인 공통 패턴):
+ *   - schema (이 파일)   = 형식 검증 (필수 필드, 타입, 길이) — 1차 방어
+ *   - entity             = 도메인 규칙 검증 — 2차 방어 (있는 도메인만)
+ *   - repository         = 권한 격리 (user_id 조건) — 3차 방어
  *
- * 비책임:
- *   - 비즈니스 규칙 (소유권, 도메인 규칙) — 그건 service 계층 책임
+ * 단, memo 는 도메인 규칙이 본질적으로 권한 격리 외에 없어서
+ * entity 레이어가 비어있다. workflow connection (from !== to 검증) 처럼
+ * 도메인 규칙이 풍부해지면 entity 가 추가될 자리.
  *
  * 명명 규칙: {라우트동작}{Body|Params}Schema
  */
