@@ -3,10 +3,7 @@
  *
  * 책임 분리:
  *   - schema = 형식 검증 (필수 필드, 타입, 길이)
- *   - entity (AiInputValidationError) = 도메인 비즈니스 규칙 검증을 위한 sentinel
- *
- * 현재는 형식 검증이 모두 schema 로 이동했지만,
- * AiInputValidationError 클래스 자체는 향후 비즈니스 규칙 추가 시 재사용 위해 도메인에 유지.
+ *   - service = 도메인 비즈니스 규칙 (modelId 존재 검증 → ModelNotFoundError)
  */
 
 /**
