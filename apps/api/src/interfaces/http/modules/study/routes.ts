@@ -1,6 +1,5 @@
 ﻿import type { FastifyInstance } from "fastify";
-import { DEFAULT_DOMAIN_KEY, buildStudyBundle, buildStudyCatalog, getCatalogStore } from "../../core/catalog";
-
+import { DEFAULT_DOMAIN_KEY, buildStudyBundle, buildStudyCatalog, getCatalogStore } from "../../../../core/catalog";
 export async function registerStudyRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { domain?: string } }>("/study/catalog", async (request, reply) => {
     const domainKey = request.query.domain?.trim() || DEFAULT_DOMAIN_KEY;

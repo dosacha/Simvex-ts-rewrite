@@ -2,7 +2,7 @@
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
-import { registerStudyRoutes } from "./modules/study/routes";
+import { registerStudyRoutes } from "./interfaces/http/modules/study/routes";
 import { registerMemoRoutesV2 } from "./interfaces/http/modules/memos/memo.routes";
 import { MemoService } from "./application/memos/memo.service";
 import { MemoController } from "./interfaces/http/modules/memos/memo.controller";
