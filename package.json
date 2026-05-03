@@ -20,6 +20,12 @@
     "rehearsal:stage": "npm run rehearsal:check -w @simvex/api && npm run migrate:validate -w @simvex/api && npm run db:smoke -w @simvex/api && npm run test:unit -w @simvex/api"
   },
   "devDependencies": {
-    "cross-env": "^10.0.0"
+    "@eslint/js": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
+    "cross-env": "^10.0.0",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.3"
   }
 }

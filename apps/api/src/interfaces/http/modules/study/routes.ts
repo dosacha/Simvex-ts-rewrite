@@ -1,11 +1,11 @@
 ﻿import type { FastifyInstance } from "fastify";
 import { DEFAULT_DOMAIN_KEY, buildStudyBundle, buildStudyCatalog, getCatalogStore } from "../../../../core/catalog";
 export async function registerStudyRoutes(app: FastifyInstance) {
-  app.get<{ Querystring: { domain?: string } }>("/study/catalog", async (request, reply) => {
+  app.get<{ Querystring: { domain?: string } }>("/study/catalog", async (request) => {
     const domainKey = request.query.domain?.trim() || DEFAULT_DOMAIN_KEY;
-
+    
     return buildStudyCatalog(domainKey);
-  });
+});
 
   app.get<{ Params: { domainKey: string; categoryKey: string } }>(
     "/study/:domainKey/:categoryKey/models",

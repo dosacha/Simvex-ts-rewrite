@@ -15,7 +15,8 @@ test(
     await pool.query("DELETE FROM workflow_nodes");
     await pool.query("DELETE FROM ai_histories");
     await pool.query("DELETE FROM memos");
-
+    // databaseUrl 은 test 진입 시점에 이미 검증됨 (POSTGRES_URL 환경 변수 필수)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const repos = createPostgresRepositories({ databaseUrl: databaseUrl! });
 
     const memo = await repos.memo.create("pg-user", 55, { title: "pg-title", content: "pg-content" });

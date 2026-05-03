@@ -16,6 +16,8 @@ export type { WorkflowFile } from "../../core/repository";
  *   - entity = 도메인 규칙 (이 sanitize 가 도메인 규칙)
  */
 export function sanitizeFileName(fileName: string): string {
+    // 의도된 제어 문자 매칭 (보안: directory traversal / null byte 방어)
+    // eslint-disable-next-line no-control-regex
     const normalized = fileName.replace(/[\u0000-\u001f\u007f]+/g, "").trim();
     const noPath = normalized.replace(/[\\/]+/g, "_");
     return noPath.length > 0 ? noPath : "uploaded-file";
