@@ -1,6 +1,21 @@
 ﻿# API 호환 맵
 
-## 유지 엔드포인트
+기준일: 2026-05-03 (5단계 narrative cleanup 완료 시점)
+
+이 문서는 SIMVEX 의 두 가지 코드 base 의 API 를 모두 명시합니다:
+- **운영 환경 (현재)**: 4단계 종착점 (`origin/main = 25ff09e`) 코드 = v1 endpoint
+- **다음 배포 사이클**: 5단계 후 코드 (`origin/main = 7773c60`) = v2 endpoint
+
+legacy-ui 가 v1 path 호출하는 흐름이라 운영에는 v1 살아있고, 5단계는 v1 통째
+제거 + v2 통일이라 같이 배포할 수 없음. 다음 배포 사이클에서 신규 SPA + 5단계
+코드 + legacy-ui transition 동시 배포 예정.
+
+## 운영 환경 엔드포인트 (v1, Lambda = 25ff09e 코드)
+
+### 공용 (인증 불필요)
+- GET `/api/study/catalog`
+
+### 인증 필요 (`X-User-ID` 헤더)
 - GET `/api/models`
 - GET `/api/models/:id`
 - GET `/api/models/:id/parts`
@@ -22,7 +37,59 @@
 - GET `/api/workflow/files/download/:id`
 - DELETE `/api/workflow/files/:id`
 
-## 개선 정책
-- 모든 mutating endpoint는 `X-User-ID`를 받고 소유권 검증
-- 시험 API는 기본적으로 정답(`answer`) 미포함 응답
+## 다음 배포 사이클 엔드포인트 (v2, 코드 = 7773c60)
+
+### 공용
+- GET `/api/study/catalog`
+
+### 인증 필요
+- GET `/api/v2/models`
+- GET `/api/v2/models/:id`
+- GET `/api/v2/models/:id/parts`
+- GET `/api/v2/models/:id/quizzes`
+- GET `/api/v2/exam?modelIds=1,2`  ← v1 의 `/api/models/exam` 에서 path 변경
+- POST `/api/v2/exam/submit`  ← **신규 엔드포인트** (v1 에 없던 서버 채점)
+- GET `/api/v2/models/:id/memos`
+- POST `/api/v2/models/:id/memos`
+- PUT `/api/v2/memos/:id`
+- DELETE `/api/v2/memos/:id`
+- GET `/api/v2/ai/history/:modelId`
+- POST `/api/v2/ai/ask`
+- GET `/api/v2/workflow`
+- POST `/api/v2/workflow/nodes`
+- PUT `/api/v2/workflow/nodes/:id`
+- DELETE `/api/v2/workflow/nodes/:id`
+- POST `/api/v2/workflow/connections`
+- DELETE `/api/v2/workflow/connections?id=N | ?from=N&to=M`
+- POST `/api/v2/workflow/nodes/:nodeId/files`
+- GET `/api/v2/workflow/files/:fileId`  ← v1 의 `/files/download/:id` 에서 path 변경
+- DELETE `/api/v2/workflow/files/:fileId`
+
+## 개선 정책 (운영 + 다음 배포 사이클 공통)
+- 모든 mutating endpoint 는 `X-User-ID` 받고 소유권 검증 (인가)
+- 시험 API 는 기본적으로 정답 (`answer`) 미포함 응답
 - 파일 다운로드는 파일 소유권 검증 후 제공
+- AI 오류 메시지 마스킹 (운영: 502, 다음 배포: 500)
+
+## 인증 한계 (운영 + 다음 배포 사이클 공통)
+- 현재 `X-User-ID` 는 클라이언트 주장값 (인가만 구현, 인증 부재)
+- JWT 인증 도입은 backlog — auth plugin 한 곳만 변경 (1단계 격리 설계의 가치)
+
+## 주요 변경 (v1 → v2)
+
+### Path 변경
+| v1 | v2 | 설명 |
+|---|---|---|
+| `/api/models/...` | `/api/v2/models/...` | prefix 추가 |
+| `/api/memos/...` | `/api/v2/memos/...` | prefix 추가 |
+| `/api/ai/...` | `/api/v2/ai/...` | prefix 추가 |
+| `/api/workflow/...` | `/api/v2/workflow/...` | prefix 추가 |
+| `/api/models/exam` | `/api/v2/exam` | 도메인 분리 |
+| `/api/workflow/files/download/:id` | `/api/v2/workflow/files/:fileId` | path 단순화 |
+
+### 신규
+- `POST /api/v2/exam/submit` — 서버-사이드 시험 채점 (v1 은 클라이언트 채점)
+
+### 제거
+- v1 의 모든 endpoint (5단계 P0-2 commit `6a21ce5` 에서 통째 제거)
+- legacy v1 routes.ts 파일 통째 삭제
