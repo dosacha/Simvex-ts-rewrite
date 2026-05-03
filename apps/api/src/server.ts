@@ -30,6 +30,22 @@ export async function buildServer() {
     .split(",")
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
+
+  /**
+   * CORS allowlist + credentials 정책.
+   *
+   * production 배포 시 SIMVEX_CORS_ORIGINS 환경 변수 (콤마 구분) 설정 필수.
+   * 미설정 시 localhost dev 만 허용 — 운영 환경 변수 누락 시 외부 노출 방지 fail-safe.
+   *
+   * credentials: true 의 의미:
+   *   - 브라우저 cross-origin 요청에 cookie / Authorization 헤더 포함 허용
+   *   - 향후 cookie 기반 인증 도입 시 필요
+   *   - 현재 x-user-id 헤더 인증이라 cookie 미사용이지만 호환성 위해 유지
+   *
+   * origin 이 없는 요청 (curl, server-to-server) 통과:
+   *   - 의도된 동작 — 같은 호스트 / 동일 출처 내 호출 허용
+   *   - 외부 cross-origin 만 차단
+   */
   const allowlist = new Set(
     configuredOrigins.length > 0 ? configuredOrigins : ["http://localhost:5173", "http://127.0.0.1:5173"],
   );

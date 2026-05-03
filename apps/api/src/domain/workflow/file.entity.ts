@@ -1,4 +1,5 @@
 import type { WorkflowFile } from "../../core/repository";
+import { WORKFLOW_FILE_DOWNLOAD_PATH } from "./workflow.entity";
 
 export type { WorkflowFile } from "../../core/repository";
 
@@ -37,6 +38,6 @@ export function buildFileResponse(file: WorkflowFile): {
     return {
         id: file.id,
         fileName: file.fileName,
-        url: `/api/v2/workflow/files/${file.id}`,
+        url: `${WORKFLOW_FILE_DOWNLOAD_PATH}/${file.id}`,
     };
 }

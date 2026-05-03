@@ -70,6 +70,17 @@ export function createConnection(input: {
 // 응답 변환 (HTTP DTO)
 // ────────────────────────────────────────────────
 
+/**
+ * file URL 정규화 base path.
+ *
+ * 현재: 상수로 분리. 환경 변수 / CDN base URL 분리는 backlog.
+ *      backlog 작업 시 이 상수만 config 에서 받도록 변경하면 됨.
+ *
+ * file.entity.ts 의 buildFileResponse 의 URL 과 정확히 같은 형식이라
+ * 두 곳에서 같은 상수 사용 (export). 변경 시 한 곳만 수정하면 됨.
+ */
+export const WORKFLOW_FILE_DOWNLOAD_PATH = "/api/v2/workflow/files";
+
 export interface FileUrlReference {
     id: number;
     fileName: string;
@@ -122,6 +133,6 @@ function buildFileUrlReference(file: WorkflowFile): FileUrlReference {
     return {
         id: file.id,
         fileName: file.fileName,
-        url: `/api/v2/workflow/files/${file.id}`,
+        url: `${WORKFLOW_FILE_DOWNLOAD_PATH}/${file.id}`,
     };
 }
