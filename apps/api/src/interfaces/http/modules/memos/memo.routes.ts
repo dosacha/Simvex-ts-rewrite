@@ -7,6 +7,8 @@ import {
     listMemosByModelParamsSchema,
     createMemoInModelParamsSchema,
     createMemoInModelBodySchema,
+    memoResponseSchema,
+    memoListResponseSchema,
 } from "./memo.schema";
 
 export async function registerMemoRoutesV2(app: FastifyInstance, controller: MemoController) {
@@ -16,6 +18,9 @@ export async function registerMemoRoutesV2(app: FastifyInstance, controller: Mem
             schema: {
                 params: updateMemoParamsSchema,
                 body: updateMemoBodySchema,
+                response: {
+                    200: memoResponseSchema,
+                },
             },
         },
         (request, reply) => controller.updateMemo(request, reply),
@@ -36,6 +41,9 @@ export async function registerMemoRoutesV2(app: FastifyInstance, controller: Mem
         {
             schema: {
                 params: listMemosByModelParamsSchema,
+                response: {
+                    200: memoListResponseSchema,
+                },
             },
         },
         (request, reply) => controller.listMemosByModel(request, reply),
@@ -47,6 +55,9 @@ export async function registerMemoRoutesV2(app: FastifyInstance, controller: Mem
             schema: {
                 params: createMemoInModelParamsSchema,
                 body: createMemoInModelBodySchema,
+                response: {
+                    201: memoResponseSchema,
+                },
             },
         },
         (request, reply) => controller.createMemoInModel(request, reply),

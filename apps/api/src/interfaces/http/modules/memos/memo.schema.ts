@@ -82,3 +82,32 @@ export const createMemoInModelBodySchema = {
     content: { type: "string", maxLength: 10000 },
   },
 } as const;
+
+/**
+ * Memo response schema (성공 응답만 정의).
+ *
+ * 정책:
+ *   - 성공 응답 (200, 201) 만 schema 로 보장 → API 계약의 일관성 정량 보장
+ *   - 에러 응답 (400, 401, 404, 500) 은 Fastify 의 표준 에러 형식 그대로 사용
+ *   - shared 의 MemoItem type 과 일치 (단일 진실 원칙)
+ *
+ * Fastify 의 response schema 는 응답 직렬화 시 사용 — schema 와 어긋나는 필드는 제외됨.
+ * 즉 schema 가 응답의 화이트리스트 역할 (보안 보강).
+ */
+
+/** 단일 memo 응답 (POST 201, PUT 200) */
+export const memoResponseSchema = {
+  type: "object",
+  required: ["id", "title", "content"],
+  properties: {
+    id: { type: "integer" },
+    title: { type: "string" },
+    content: { type: "string" },
+  },
+} as const;
+
+/** memo 배열 응답 (GET list 200) */
+export const memoListResponseSchema = {
+  type: "array",
+  items: memoResponseSchema,
+} as const;
