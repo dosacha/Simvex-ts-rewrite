@@ -42,12 +42,6 @@ export async function buildServer() {
     },
     credentials: true,
   });
-
-  await app.register(multipart, {
-    limits: {
-      fileSize: 20 * 1024 * 1024,
-    },
-  });
   
   await app.register(async (api) => {
     // legacy 라우트 — v1, 인증 미적용 (점진적 deprecate 예정)
@@ -66,6 +60,17 @@ export async function buildServer() {
     // encapsulation: 이 register 안에서만 auth plugin hook 이 동작.
     await api.register(async (authed) => {
       await registerAuthPlugin(authed);
+
+      // multipart register 위치: auth plugin scope 안으로 이동.
+      // 이유: 미인증 요청이 multipart buffer 를 메모리에 적재하기 전에 401 반환되어야 함.      // (auth plugin 밖에서 register 시 미인증 클라이언트가 buffer 적재 가능 → DoS 위험)
+      await authed.register(multipart, {
+        // 단일 파일 최대 20MB.
+        // 의사결정: 학습용 자료 / 다이어그램 이미지가 주 use case 라 20MB 가 충분.
+        // 추후 video / 대용량 파일 도입 시 환경 변수로 분리 + 서버 메모리 / 디스크 정책 재검토.
+        limits: {
+          fileSize: 20 * 1024 * 1024,
+        },
+      });
 
       const memoService = new MemoService(repositories.memo);
       const memoController = new MemoController(memoService);
