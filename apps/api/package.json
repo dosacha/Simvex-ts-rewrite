@@ -12,8 +12,9 @@
     "migrate:validate": "tsx scripts/validate-migrations.ts",
     "db:smoke": "tsx scripts/db-smoke.ts",
     "rehearsal:check": "tsx scripts/check-stage-env.ts",
+    "mint-token": "tsx scripts/mint-token.ts",
     "test": "npm run test:unit && npm run test:postgres",
-    "test:unit": "tsx --test src/core/catalog.test.ts src/core/repository.test.ts src/__tests__/api-contract.test.ts",    
+    "test:unit": "tsx --test src/core/catalog.test.ts src/core/repository.test.ts src/__tests__/api-contract.test.ts",
     "test:postgres": "tsx --test src/core/repository-postgres.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.ts\"",
@@ -24,6 +25,7 @@
   "dependencies": {
     "@fastify/aws-lambda": "^6.4.0",
     "@fastify/cors": "^10.0.0",
+    "@fastify/jwt": "^10.0.0",
     "@fastify/multipart": "^9.0.0",
     "@simvex/shared": "0.1.0",
     "fastify": "^5.0.0",

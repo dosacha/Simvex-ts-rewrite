@@ -1,6 +1,7 @@
 ﻿import Fastify from "fastify";
 import { pathToFileURL } from "node:url";
 import cors from "@fastify/cors";
+import fastifyJwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
 import { registerStudyRoutes } from "./interfaces/http/modules/study/routes";
 import { registerMemoRoutesV2 } from "./interfaces/http/modules/memos/memo.routes";
@@ -38,9 +39,9 @@ export async function buildServer() {
    * 미설정 시 localhost dev 만 허용 — 운영 환경 변수 누락 시 외부 노출 방지 fail-safe.
    *
    * credentials: true 의 의미:
-   *   - 브라우저 cross-origin 요청에 cookie / Authorization 헤더 포함 허용
-   *   - 향후 cookie 기반 인증 도입 시 필요
-   *   - 현재 x-user-id 헤더 인증이라 cookie 미사용이지만 호환성 위해 유지
+   *   - 브라우저 cross-origin 요청에 Authorization 헤더 / cookie 포함 허용
+   *   - JWT 는 현재 Authorization: Bearer <token> 헤더로 전달됨
+   *   - 향후 cookie 기반 세션 / refresh token 도입 시도 이 설정 그대로
    *
    * origin 이 없는 요청 (curl, server-to-server) 통과:
    *   - 의도된 동작 — 같은 호스트 / 동일 출처 내 호출 허용
@@ -57,6 +58,19 @@ export async function buildServer() {
       return callback(new Error("CORS origin not allowed"), false);
     },
     credentials: true,
+  });
+
+  /**
+   * JWT 플러그인의 등록 위치 결정:
+   *   - app 레벨 (encapsulation 밖)에 등록한다.
+   *   - 검증 hook 은 auth plugin 안에서만 동작하므로 공용 라우트에는 영향 없음.
+   *   - app.jwt.sign / request.jwtVerify decorator 가 전체에서 사용 가능 (테스트의 토큰 생성 등).
+   *
+   * secret 은 SIMVEX_JWT_SECRET 환경 변수에서 읽는다. 미설정 시 부트 시점에 예외로 실패.
+   * 길이가 짧으면 (브루트포스 위험) 특별히 거부하여 운영 사고 방지.
+   */
+  await app.register(fastifyJwt, {
+    secret: readJwtSecret(),
   });
   
   await app.register(async (api) => {
@@ -109,6 +123,30 @@ export async function buildServer() {
   }, { prefix: "/api" });
 
   return app;
+}
+
+/**
+ * SIMVEX_JWT_SECRET 환경 변수 검증.
+ *
+ * 미설정 / 공백 / 32자 미만이면 부트 시점에 멈춘다.
+ * 런타임에 토큰 검증이 조용히 실패하는 것보다 부트 실패가 낫다.
+ *
+ * 32자 기준은 HS256의 256-bit 브루트포스 난이도를 확보하려면 필요한
+ * 최소 엔트로피에서 유래. ASCII 32바이트 정도면 충분.
+ */
+function readJwtSecret(): string {
+  const secret = process.env.SIMVEX_JWT_SECRET?.trim() ?? "";
+  if (secret.length === 0) {
+    throw new Error(
+      "SIMVEX_JWT_SECRET 환경 변수가 필요합니다. JWT 서명 / 검증의 secret 으로 사용됩니다."
+    );
+  }
+  if (secret.length < 32) {
+    throw new Error(
+      "SIMVEX_JWT_SECRET 는 최소 32자 이상이어야 합니다 (HS256 브루트포스 방어)."
+    );
+  }
+  return secret;
 }
 
 async function startServer() {

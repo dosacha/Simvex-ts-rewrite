@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import type { FastifyInstance } from "fastify";
+
+// JWT secret 은 buildServer() import 보다 먼저 세팅해야 한다.
+// server.ts 가 module 평가 시점이 아니라 buildServer() 호출 시점에 secret 을 읽으므로
+// 사실 import 직후에 세팅해도 동작은 하지만, "테스트는 secret 이 무엇이든 신경쓰지 않는다"
+// 라는 의도를 코드 위치로 명확히 표현하기 위해 import 보다 위에 둔다.
+process.env.SIMVEX_JWT_SECRET ??= "test-jwt-secret-for-api-contract-tests-must-be-32-chars-or-longer";
+
 import { buildServer } from "../server";
 import { setCatalogImportDir } from "../core/catalog";
 import { repositories } from "../core/repository";
@@ -35,6 +43,19 @@ function createImportFixture(): string {
 
 function makeUserId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+}
+
+/**
+ * 인증된 요청의 헤더를 만든다.
+ *
+ * 단순한 helper 지만 의도적으로 이 한 곳에 모음:
+ *   - 모든 테스트가 동일한 sub claim 규약을 쓴다는 사실을 코드로 못 박음.
+ *   - 향후 토큰 발급 정책 (expiry, claim 추가 등) 변경 시 한 자리만 고치면 됨.
+ */
+function bearer(app: FastifyInstance, userId: string): { authorization: string } {
+  return {
+    authorization: `Bearer ${app.jwt.sign({ sub: userId }, { expiresIn: "1h" })}`,
+  };
 }
 
 test("GET /api/study/catalog: domain query 없이 기본 도메인으로 응답함", async (t) => {
@@ -94,7 +115,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
     method: "POST",
     url: `/api/v2/models/${firstModel.id}/memos`,
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": "application/json",
     },
     payload: { title: "memo-1", content: "memo-content" },
@@ -106,7 +127,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
     method: "PUT",
     url: `/api/v2/memos/${createdMemo.id}`,
     headers: {
-      "x-user-id": otherId,
+      ...bearer(app, otherId),
       "content-type": "application/json",
     },
     payload: { title: "hijack", content: "hijack" },
@@ -117,7 +138,7 @@ test("memo 수정 API: 작성자와 다른 사용자 요청은 404를 반환함"
     method: "PUT",
     url: `/api/v2/memos/${createdMemo.id}`,
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": "application/json",
     },
     payload: { title: "updated", content: "updated-content" },
@@ -142,7 +163,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
     method: "POST",
     url: "/api/v2/workflow/nodes",
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": "application/json",
     },
     payload: { title: "Node A", content: "A", x: 100, y: 120 },
@@ -154,7 +175,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
     method: "POST",
     url: "/api/v2/workflow/nodes",
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": "application/json",
     },
     payload: { title: "Node B", content: "B", x: 200, y: 220 },
@@ -166,7 +187,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
     method: "POST",
     url: "/api/v2/workflow/connections",
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": "application/json",
     },
     payload: { from: nodeA.id, to: nodeB.id, fromAnchor: "right", toAnchor: "left" },
@@ -176,7 +197,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
   const ownerList = await app.inject({
     method: "GET",
     url: "/api/v2/workflow",
-    headers: { "x-user-id": ownerId },
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
   });
   assert.equal(ownerList.statusCode, 200);
   const ownerWorkflow = ownerList.json() as {
@@ -189,7 +210,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
   const otherList = await app.inject({
     method: "GET",
     url: "/api/v2/workflow",
-    headers: { "x-user-id": otherId },
+    headers: bearer(app, otherId),
   });
   assert.equal(otherList.statusCode, 200);
   const otherWorkflow = otherList.json() as { nodes: unknown[]; connections: unknown[] };
@@ -200,7 +221,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
     method: "PUT",
     url: `/api/v2/workflow/nodes/${nodeA.id}`,
     headers: {
-      "x-user-id": otherId,
+      ...bearer(app, otherId),
       "content-type": "application/json",
     },
     payload: { title: "hijack" },
@@ -210,7 +231,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
   const deleteByOwner = await app.inject({
     method: "DELETE",
     url: `/api/v2/workflow/nodes/${nodeA.id}`,
-    headers: { "x-user-id": ownerId },
+    headers: bearer(app, ownerId),
   });
   assert.equal(deleteByOwner.statusCode, 204);
 
@@ -221,7 +242,7 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
   const afterDelete = await app.inject({
     method: "GET",
     url: "/api/v2/workflow",
-    headers: { "x-user-id": ownerId },
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
   });
   assert.equal(afterDelete.statusCode, 200);
   const remaining = afterDelete.json() as {
@@ -257,8 +278,8 @@ test("POST /api/ai/ask: 내부 오류 발생 시 마스킹된 에러를 반환�
     method: "POST",
     url: "/api/v2/ai/ask",
     headers: {
+      ...bearer(app, makeUserId("ai-tester")),
       "content-type": "application/json",
-      "x-user-id": makeUserId("ai-tester"),
     },
     payload: { modelId: firstModel.id, question: "테스트 질문" },
   });
@@ -270,21 +291,21 @@ test("POST /api/ai/ask: 내부 오류 발생 시 마스킹된 에러를 반환�
   assert.equal(payload.context, "");
 });
 
-test("v2 인증 라우트: x-user-id 헤더 없으면 401을 반환함", async (t) => {
+test("v2 인증 라우트: JWT 가 없거나 무효하면 401 을 반환함", async (t) => {
   const fixtureDir = createImportFixture();
   setCatalogImportDir(fixtureDir);
 
   const app = await buildServer();
   t.after(() => app.close());
 
-  // memo: 헤더 없이 모델 메모 목록 요청
+  // memo: Authorization 헤더 자체가 없는 경우 → 401
   const memoNoHeader = await app.inject({
     method: "GET",
     url: "/api/v2/models/1/memos",
   });
   assert.equal(memoNoHeader.statusCode, 401);
 
-  // workflow: 헤더 없이 노드 생성 요청
+  // workflow: Authorization 헤더 자체가 없는 경우 → 401
   const workflowNoHeader = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
@@ -293,7 +314,7 @@ test("v2 인증 라우트: x-user-id 헤더 없으면 401을 반환함", async (
   });
   assert.equal(workflowNoHeader.statusCode, 401);
 
-  // ai: 헤더 없이 ask 요청
+  // ai: Authorization 헤더 자체가 없는 경우 → 401
   const aiNoHeader = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
@@ -302,20 +323,78 @@ test("v2 인증 라우트: x-user-id 헤더 없으면 401을 반환함", async (
   });
   assert.equal(aiNoHeader.statusCode, 401);
 
-  // 빈 문자열 헤더도 401 (공백만 있는 케이스)
-  const emptyHeader = await app.inject({
+  // Bearer 뒤에 JWT 형식이 아닌 문자열 → 401 (서명 검증 실패)
+  const garbageBearer = await app.inject({
     method: "GET",
     url: "/api/v2/models/1/memos",
-    headers: { "x-user-id": "   " },
+    headers: { authorization: "Bearer not-a-real-jwt" },
   });
-  assert.equal(emptyHeader.statusCode, 401);
+  assert.equal(garbageBearer.statusCode, 401);
 
-  // 공용 라우트는 헤더 없어도 200 — 인증 경계가 정확히 분리되었는지 확인
+  // 다른 secret 으로 서명된 토큰 → 401 (서명 불일치)
+  // 같은 알고리즘으로 만들었지만 secret 이 달라 서버 검증을 통과하지 못한다.
+  const fakeHeader = Buffer.from('{"alg":"HS256","typ":"JWT"}').toString("base64url");
+  const fakePayload = Buffer.from('{"sub":"hijacker"}').toString("base64url");
+  // signature 자리는 임의값 — 서버 secret 으로 다시 계산했을 때 일치하지 않으므로 거부.
+  const forgedToken = `${fakeHeader}.${fakePayload}.deadbeefdeadbeefdeadbeefdeadbeef`;
+  const forgedRes = await app.inject({
+    method: "GET",
+    url: "/api/v2/models/1/memos",
+    headers: { authorization: `Bearer ${forgedToken}` },
+  });
+  assert.equal(forgedRes.statusCode, 401);
+
+  // sub claim 이 빈 문자열인 토큰 → 401
+  // 서명도 통과하고 exp 도 있어서 jwtVerify 단계는 깨끗히 지나간다.
+  // 그 다음 plugin 의 sub.trim().length === 0 가드가 진짜로 막는지 확인.
+  const emptySubToken = app.jwt.sign({ sub: "   " }, { expiresIn: "1h" });
+  const emptySubRes = await app.inject({
+    method: "GET",
+    url: "/api/v2/models/1/memos",
+    headers: { authorization: `Bearer ${emptySubToken}` },
+  });
+  assert.equal(emptySubRes.statusCode, 401);
+
+  // exp claim 이 없는 토큰 → 401
+  // @fastify/jwt 자체는 통과시키지만 (영구 토큰), plugin 의 exp 가드가 막는다.
+  // SECURITY_MODEL 의 "exp claim 검증" narrative 가 진짜인지의 contract.
+  const noExpToken = app.jwt.sign({ sub: "no-exp-user" });
+  const noExpRes = await app.inject({
+    method: "GET",
+    url: "/api/v2/models/1/memos",
+    headers: { authorization: `Bearer ${noExpToken}` },
+  });
+  assert.equal(noExpRes.statusCode, 401);
+
+  // 만료된 토큰 → 401
+  // 음수 expiresIn 은 @fastify/jwt 가 거부하므로 exp claim 을 직접 과거로 박는다.
+  // 1초 전이면 어떤 clock skew 허용 범위 (보통 0~30초) 보다도 넉넉히 만료 상태.
+  const expiredToken = app.jwt.sign({
+    sub: "expired-user",
+    exp: Math.floor(Date.now() / 1000) - 60,
+  });
+  const expiredRes = await app.inject({
+    method: "GET",
+    url: "/api/v2/models/1/memos",
+    headers: { authorization: `Bearer ${expiredToken}` },
+  });
+  assert.equal(expiredRes.statusCode, 401);
+
+  // 공용 라우트는 토큰 없어도 200 — 인증 경계가 정확히 분리되었는지 확인
   const publicCatalog = await app.inject({
     method: "GET",
     url: "/api/v2/models",
   });
   assert.equal(publicCatalog.statusCode, 200);
+
+  // 정상 토큰은 통과 — 401 의 negative 만이 아니라 positive case 도 한 번은 확인.
+  const validRes = await app.inject({
+    method: "GET",
+    url: "/api/v2/models/1/memos",
+    headers: bearer(app, makeUserId("auth-positive")),
+  });
+  // 모델이 없으면 404, 있으면 200 — 어쨌든 401 이 아니어야 한다.
+  assert.notEqual(validRes.statusCode, 401);
 });
 
 test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차단됨", async (t) => {
@@ -337,7 +416,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const seedMemoRes = await app.inject({
     method: "POST",
     url: `/api/v2/models/${firstModel.id}/memos`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "seed", content: "seed-content" },
   });
   assert.equal(seedMemoRes.statusCode, 201);
@@ -348,7 +427,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const missingTitle = await app.inject({
     method: "POST",
     url: `/api/v2/models/${firstModel.id}/memos`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { content: "only content" },
   });
   assert.equal(missingTitle.statusCode, 400);
@@ -357,7 +436,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const missingContent = await app.inject({
     method: "POST",
     url: `/api/v2/models/${firstModel.id}/memos`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "only title" },
   });
   assert.equal(missingContent.statusCode, 400);
@@ -366,7 +445,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const emptyTitle = await app.inject({
     method: "POST",
     url: `/api/v2/models/${firstModel.id}/memos`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "", content: "valid content" },
   });
   assert.equal(emptyTitle.statusCode, 400);
@@ -375,7 +454,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const tooLongTitle = await app.inject({
     method: "POST",
     url: `/api/v2/models/${firstModel.id}/memos`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "x".repeat(201), content: "valid content" },
   });
   assert.equal(tooLongTitle.statusCode, 400);
@@ -390,7 +469,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const partialUpdate = await app.inject({
     method: "PUT",
     url: `/api/v2/memos/${seedMemo.id}`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "updated-title-only" },
   });
   assert.equal(partialUpdate.statusCode, 200);
@@ -402,7 +481,7 @@ test("memo schema 검증: 잘못된 body 는 controller 진입 전 400 으로 �
   const invalidId = await app.inject({
     method: "PUT",
     url: `/api/v2/memos/abc`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "ok" },
   });
   assert.equal(invalidId.statusCode, 400);
@@ -421,7 +500,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const nodeARes = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "Node A", content: "A", x: 100, y: 100 },
   });
   assert.equal(nodeARes.statusCode, 201);
@@ -430,7 +509,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const nodeBRes = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "Node B", content: "B", x: 200, y: 200 },
   });
   assert.equal(nodeBRes.statusCode, 201);
@@ -442,7 +521,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const noTitle = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { content: "no title", x: 0, y: 0 },
   });
   assert.equal(noTitle.statusCode, 400);
@@ -451,7 +530,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const noX = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "ok", content: "ok", y: 0 },
   });
   assert.equal(noX.statusCode, 400);
@@ -463,7 +542,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const xNotNumber = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { title: "ok", content: "ok", x: "abc", y: 0 },
   });
   assert.equal(xNotNumber.statusCode, 400);
@@ -474,7 +553,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const emptyUpdate = await app.inject({
     method: "PUT",
     url: `/api/v2/workflow/nodes/${nodeA.id}`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: {},
   });
   assert.equal(emptyUpdate.statusCode, 400);
@@ -483,7 +562,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const partialUpdate = await app.inject({
     method: "PUT",
     url: `/api/v2/workflow/nodes/${nodeA.id}`,
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { x: 999 },
   });
   assert.equal(partialUpdate.statusCode, 200);
@@ -492,7 +571,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const invalidId = await app.inject({
     method: "PUT",
     url: "/api/v2/workflow/nodes/abc",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { x: 1 },
   });
   assert.equal(invalidId.statusCode, 400);
@@ -503,7 +582,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const noFrom = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/connections",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { to: nodeB.id, fromAnchor: "right", toAnchor: "left" },
   });
   assert.equal(noFrom.statusCode, 400);
@@ -512,7 +591,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const fromNotInt = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/connections",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { from: 1.5, to: nodeB.id, fromAnchor: "right", toAnchor: "left" },
   });
   assert.equal(fromNotInt.statusCode, 400);
@@ -522,7 +601,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const selfLoop = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/connections",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { from: nodeA.id, to: nodeA.id, fromAnchor: "right", toAnchor: "left" },
   });
   assert.equal(selfLoop.statusCode, 400);
@@ -533,7 +612,7 @@ test("workflow schema 검증: 잘못된 body 는 controller 진입 전 400 으�
   const badQueryId = await app.inject({
     method: "DELETE",
     url: "/api/v2/workflow/connections?id=abc",
-    headers: { "x-user-id": userId },
+    headers: bearer(app, userId),
   });
   assert.equal(badQueryId.statusCode, 400);
 });
@@ -559,7 +638,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const noQuestion = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { modelId: firstModel.id },
   });
   assert.equal(noQuestion.statusCode, 400);
@@ -568,7 +647,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const noModelId = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { question: "테스트?" },
   });
   assert.equal(noModelId.statusCode, 400);
@@ -577,7 +656,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const emptyQuestion = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { question: "", modelId: firstModel.id },
   });
   assert.equal(emptyQuestion.statusCode, 400);
@@ -586,7 +665,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const modelIdNotInt = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { question: "ok", modelId: 1.5 },
   });
   assert.equal(modelIdNotInt.statusCode, 400);
@@ -595,7 +674,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const tooLongQuestion = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { question: "x".repeat(2001), modelId: firstModel.id },
   });
   assert.equal(tooLongQuestion.statusCode, 400);
@@ -604,7 +683,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const globalMode = await app.inject({
     method: "POST",
     url: "/api/v2/ai/ask",
-    headers: { "x-user-id": userId, "content-type": "application/json" },
+    headers: { ...bearer(app, userId), "content-type": "application/json" },
     payload: { question: "글로벌 질문", modelId: firstModel.id },
   });
   assert.equal(globalMode.statusCode, 200);
@@ -617,7 +696,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const invalidParams = await app.inject({
     method: "GET",
     url: "/api/v2/ai/history/abc",
-    headers: { "x-user-id": userId },
+    headers: bearer(app, userId),
   });
   assert.equal(invalidParams.statusCode, 400);
 
@@ -626,7 +705,7 @@ test("ai schema 검증: 잘못된 body 는 controller 진입 전 400 으로 차�
   const unknownModel = await app.inject({
     method: "GET",
     url: "/api/v2/ai/history/99999",
-    headers: { "x-user-id": userId },
+    headers: bearer(app, userId),
   });
   assert.equal(unknownModel.statusCode, 404);
 });
@@ -645,7 +724,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const nodeRes = await app.inject({
     method: "POST",
     url: "/api/v2/workflow/nodes",
-    headers: { "x-user-id": ownerId, "content-type": "application/json" },
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
     payload: { title: "Node with files", content: "...", x: 0, y: 0 },
   });
   assert.equal(nodeRes.statusCode, 201);
@@ -685,7 +764,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
     method: "POST",
     url: `/api/v2/workflow/nodes/${node.id}/files`,
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": `multipart/form-data; boundary=${upload1.boundary}`,
     },
     payload: upload1.body,
@@ -704,7 +783,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
     method: "POST",
     url: `/api/v2/workflow/nodes/${node.id}/files`,
     headers: {
-      "x-user-id": ownerId,
+      ...bearer(app, ownerId),
       "content-type": `multipart/form-data; boundary=${upload2.boundary}`,
     },
     payload: upload2.body,
@@ -719,7 +798,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const downloadRes = await app.inject({
     method: "GET",
     url: `/api/v2/workflow/files/${uploaded.id}`,
-    headers: { "x-user-id": ownerId },
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
   });
   assert.equal(downloadRes.statusCode, 200);
   // 응답이 binary buffer.
@@ -736,7 +815,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const otherDownload = await app.inject({
     method: "GET",
     url: `/api/v2/workflow/files/${uploaded.id}`,
-    headers: { "x-user-id": otherId },
+    headers: bearer(app, otherId),
   });
   assert.equal(otherDownload.statusCode, 404);
 
@@ -744,7 +823,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const otherDelete = await app.inject({
     method: "DELETE",
     url: `/api/v2/workflow/files/${uploaded.id}`,
-    headers: { "x-user-id": otherId },
+    headers: bearer(app, otherId),
   });
   assert.equal(otherDelete.statusCode, 404);
 
@@ -752,7 +831,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const ownerDelete = await app.inject({
     method: "DELETE",
     url: `/api/v2/workflow/files/${uploaded.id}`,
-    headers: { "x-user-id": ownerId },
+    headers: bearer(app, ownerId),
   });
   assert.equal(ownerDelete.statusCode, 204);
 
@@ -760,7 +839,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const downloadAfterDelete = await app.inject({
     method: "GET",
     url: `/api/v2/workflow/files/${uploaded.id}`,
-    headers: { "x-user-id": ownerId },
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
   });
   assert.equal(downloadAfterDelete.statusCode, 404);
 
@@ -768,7 +847,7 @@ test("v2 workflow file API: 업로드/다운로드/삭제 + 권한 격리 + 인�
   const invalidFileId = await app.inject({
     method: "GET",
     url: "/api/v2/workflow/files/abc",
-    headers: { "x-user-id": ownerId },
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
   });
   assert.equal(invalidFileId.statusCode, 400);
 });
