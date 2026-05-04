@@ -1,5 +1,24 @@
 ## Security 모델
 
+### 인증 (Authentication) — 구현됨 (JWT)
+
+```
+헤더: Authorization: Bearer <token>
+서명/검증: HS256, secret = SIMVEX_JWT_SECRET (최소 32자)
+sub claim = userId
+exp claim 검증으로 만료 토큰 자동 거부
+```
+
+`@fastify/jwt` 가 서명 / 만료 / 형식을 검증한다. 인증 plugin
+(`apps/api/src/interfaces/http/plugins/auth.plugin.ts`) 의 preHandler 가
+v2 인증 라우트 register 안에서만 동작 — 공용 라우트는 토큰 없이 접근 가능.
+검증 실패 / 헤더 누락 / 서명 불일치 / 만료 / 빈 sub — 모두 단일 401 메시지로
+응답하여 공격자에게 단서를 주지 않는다.
+
+토큰 발급:
+- 개발: `npm run mint-token -w @simvex/api -- <userId> [expiresIn]`
+- 운영: 정식 로그인 / 회원가입 / refresh token rotation 은 별도 작업 (BACK 항목)
+
 ### 인가 (Authorization) — 구현됨
 
 ```
@@ -8,26 +27,17 @@
 다른 사용자의 자원 조회 시 404 (정보 누설 방지, 403 X)
 ```
 
-`X-User-ID` 헤더가 식별하는 사용자의 자원만 접근 가능. repository 가 모든
+JWT 의 sub claim 이 식별하는 사용자의 자원만 접근 가능. repository 가 모든
 쿼리에 `user_id` 조건을 자동 포함하여 도메인 로직과 권한 격리를 분리.
-
-### 인증 (Authentication) — 부재 (의식적 미구현)
-
-```
-현재: X-User-ID 는 클라이언트 주장값 (인증 X)
-backlog: JWT + bcrypt + refresh token rotation
-```
-
-학습 / 포트폴리오 단계 + AWS 데모 운영 단계라 인증을 의식적으로 미뤘음.
-auth plugin (`apps/api/src/interfaces/http/plugins/auth.plugin.ts`) 한 곳만
-변경하면 인증 도입 가능 — 1단계 격리 설계의 가치.
+인증이 그 sub 값을 신뢰할 수 있도록 만들어 주고, 인가가 그 값으로 데이터를
+필터링한다 — 두 층의 책임 분리.
 
 ### CORS
 
 ```
 환경 변수: SIMVEX_CORS_ORIGINS (콤마 구분)
 미설정 fallback: localhost dev 만 허용 (production 차단 fail-safe)
-credentials: true (cookie / Authorization 헤더 포함 허용)
+credentials: true (Authorization 헤더 / cookie 포함 허용)
 ```
 
 production 배포 시 환경 변수 설정 필수. 미설정 시 외부 노출 방지.
@@ -82,7 +92,8 @@ Lambda function URL 미사용 — API Gateway HTTP API 가 단일 진입점.
 
 ### 알려진 한계 (backlog)
 
-- JWT 인증 부재 (BACK-6 참고)
+- 정식 로그인 / 회원가입 (bcrypt 비밀번호) 부재 — 현재는 운영자가 mint-token 으로 토큰 발급
+- Refresh token rotation 부재 — 토큰 만료 시 재발급 흐름 미구현
 - WAF / Rate limiting 부재 (BACK-9 참고)
 - Repository multi-step 트랜잭션 부재 (BACK-5, race window)
 - Response schema 부재 (BACK-10)

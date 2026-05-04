@@ -64,6 +64,7 @@ npm start
 ## 운영 문서
 - Runbook: `docs/OPERATIONS_RUNBOOK.md`
 - 보안 체크리스트: `docs/SECURITY_CHECKLIST.md`
+- 보안 모델: `docs/SECURITY_MODEL.md`
 - 진행 현황: `docs/PROJECT_STATUS.md`
 - 최종 사인오프: `docs/FINAL_SIGNOFF_CHECKLIST.md`
 - 배포 변수 템플릿: `docs/DEPLOYMENT_ENV_TEMPLATE.md`

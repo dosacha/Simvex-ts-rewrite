@@ -47,7 +47,7 @@ if (userAnswers[i] === q.answer) cnt++;
 <a href={file.url}>...</a>
 ```
 
-서버 v2 의 `/api/v2/workflow/files/:fileId` 는 X-User-ID 헤더 인증 필수.
+서버 v2 의 `/api/v2/workflow/files/:fileId` 는 `Authorization: Bearer <token>` 헤더 인증 필수.
 `<a href>` 클릭 시 브라우저는 헤더 자동 추가하지 않음 → 다운로드 401.
 
 운영 환경에서는 v1 endpoint (`/api/workflow/files/download/:id`) 사용 중이라
