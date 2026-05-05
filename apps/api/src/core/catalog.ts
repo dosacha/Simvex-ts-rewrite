@@ -231,9 +231,34 @@ export function findQuizzesByModelId(id: number): QuizItem[] {
   return getCatalogStore().quizzesByModelId.get(id) ?? [];
 }
 
+/**
+ * Fisher-Yates shuffle.
+ *
+ * 이전 구현은 sort(() => Math.random() - 0.5) 였으나 V8 의 timsort 비교 함수가
+ * 비대칭이면 분포가 균등하지 않다 (앞쪽 요소가 더 자주 앞에 남는 편향).
+ * 시험 출제 무작위성에 직접 영향을 주는 자리라 Fisher-Yates 로 교체.
+ *
+ * O(n) 시간, in-place 가 아닌 입력 보존 (caller 가 원본을 그대로 쓸 수 있도록).
+ *
+ * 구현 노트: noUncheckedIndexedAccess (tsconfig.base.json) 때문에 배열 인덱스
+ * 접근이 T | undefined 로 추론된다. i 와 j 가 [0, length) 범위라는 건 loop
+ * 조건이 보장하지만 컴파일러는 이를 추론 못 하므로 swap 자리에 non-null
+ * assertion 을 명시.
+ */
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = result[i]!;
+    result[i] = result[j]!;
+    result[j] = tmp;
+  }
+  return result;
+}
+
 export function generateExamQuestions(modelIds: number[], count = 20): ExamQuestion[] {
   const questions = modelIds.flatMap((modelId) => findQuizzesByModelId(modelId));
-  const shuffled = [...questions].sort(() => Math.random() - 0.5).slice(0, count);
+  const shuffled = fisherYatesShuffle(questions).slice(0, count);
 
   return shuffled.map((item) => ({
     id: item.id,
