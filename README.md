@@ -1,15 +1,6 @@
 # SIMVEX TypeScript Rewrite
 
-기존 SIMVEX MVP를 운영 가능한 API와 배포된 legacy UI 기준으로 정리한 저장소입니다.
-
-## Live Demo
-- Live URL: https://d1jk6rz3s30fgw.cloudfront.net
-- API Health: https://d1jk6rz3s30fgw.cloudfront.net/api/health
-
-## 배포 아키텍처
-- Frontend: `legacy-ui/simvex-ui-main` 빌드 산출물을 S3 + CloudFront로 배포
-- API: API Gateway + Lambda (Node.js, arm64)
-- DB: Neon PostgreSQL
+기존 SIMVEX MVP를 Fastify API와 TypeScript monorepo 기준으로 정리한 저장소입니다.
 
 ## 기술 스택
 - Legacy UI: React + JavaScript + Three.js
@@ -24,7 +15,7 @@ apps/
 packages/
   shared/   # API 공통 타입 계약
 legacy-ui/
-  simvex-ui-main/  # 운영 프론트 소스
+  simvex-ui-main/  # legacy frontend source
 ```
 
 ## 빠른 시작
@@ -61,11 +52,7 @@ npm start
 - API postgres 테스트: `npm run test:postgres -w @simvex/api`
 - API 타입체크: `npm run typecheck -w @simvex/api`
 
-## 운영 문서
-- Runbook: `docs/OPERATIONS_RUNBOOK.md`
-- 보안 체크리스트: `docs/SECURITY_CHECKLIST.md`
+## 문서
 - 보안 모델: `docs/SECURITY_MODEL.md`
+- API 호환 맵: `docs/API_COMPATIBILITY.md`
 - 진행 현황: `docs/PROJECT_STATUS.md`
-- 최종 사인오프: `docs/FINAL_SIGNOFF_CHECKLIST.md`
-- 배포 변수 템플릿: `docs/DEPLOYMENT_ENV_TEMPLATE.md`
-- 리허설 템플릿: `docs/STAGING_REHEARSAL_TEMPLATE.md`

@@ -1,7 +1,7 @@
-﻿# 리라이트 계획
+# 리라이트 계획
 
 ## 아키텍처 방향
-- 프론트: 배포된 `legacy-ui/simvex-ui-main` 유지
+- 프론트: `legacy-ui/simvex-ui-main` 호환 유지
 - 백엔드: Fastify + TypeScript + 도메인 모듈
 - 공유 계약: `packages/shared`에서 타입 단일 소스 관리
 
@@ -17,15 +17,15 @@
 2. DB 스키마 설계 및 repository 구현 (완료)
 3. 모델/스터디/AI API 구현 (완료)
 4. 워크플로우/메모 API 구현 (완료)
-5. legacy UI 배포 유지 및 미사용 Vite 프론트 제거 (완료)
+5. legacy UI 호환 유지 및 미사용 Vite 프론트 제거 (완료)
 6. E2E 검증 및 성능 최적화 (진행 중)
 
 ## 현재 마무리 단계
 - CI에서 마이그레이션 검증 + unit/postgres 테스트 분리 완료
-- 로컬/운영 Runbook 문서화 완료
+- 로컬 개발 명령과 검증 명령 문서화 완료
 - 남은 작업:
   - 실 OpenAI 클라이언트 연동 시 오류 메시지 마스킹 정책 확정
-  - 운영 환경별 배포 변수 템플릿(dev/stage/prod) 고정
+  - 정식 login / 회원가입 흐름 설계
 
 ## 1차 마일스톤 (MVP)
 - `/api/models`, `/api/models/:id/parts`
