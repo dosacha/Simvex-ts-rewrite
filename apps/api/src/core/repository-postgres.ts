@@ -285,37 +285,32 @@ class PostgresWorkflowRepository implements WorkflowRepository {
   async createConnection(userId: string, payload: Omit<WorkflowConnection, "id">): Promise<WorkflowConnection | null> {
     if (payload.from === payload.to) return null;
 
+    // user_id 격리 — payload.from / payload.to 가 다른 user 의 node 일 수 없음을 보장.
+    // FK constraint 만으로는 user 격리가 안 된다 (다른 user 의 node id 도 참조 가능).
     const nodeCheck = await this.store.query<{ id: number }>(
       `SELECT id FROM workflow_nodes WHERE user_id = $1 AND id IN ($2, $3)`,
       [userId, payload.from, payload.to],
     );
     if (nodeCheck.length < 2) return null;
 
-    const duplicate = await this.store.query<ConnectionRow>(
-      `SELECT id, from_node_id, to_node_id, from_anchor, to_anchor
-       FROM workflow_connections
-       WHERE user_id = $1
-         AND from_node_id = $2
-         AND to_node_id = $3
-         AND from_anchor = $4
-         AND to_anchor = $5
-       LIMIT 1`,
-      [userId, payload.from, payload.to, payload.fromAnchor, payload.toAnchor],
-    );
-    const dup = duplicate[0];
-    if (dup) {
-      return {
-        id: dup.id,
-        from: dup.from_node_id,
-        to: dup.to_node_id,
-        fromAnchor: dup.from_anchor,
-        toAnchor: dup.to_anchor,
-      };
-    }
-
+    // ON CONFLICT 로 SELECT-then-INSERT 의 race 를 제거.
+    //
+    // 이전 구조의 문제:
+    //   동시 요청 A, B 가 같은 (user, from, to, anchor) 로 진입할 때
+    //   A: SELECT (없음) → INSERT 성공
+    //   B: SELECT (없음) → INSERT 시도 → uq_workflow_connections_user_edge_anchor 위반
+    //      → unhandled 23505 throw → controller 가 400 으로 변환 (잘못된 응답)
+    //
+    // ON CONFLICT 적용 후:
+    //   같은 페어로 동시 / 순차 진입해도 항상 같은 row 의 RETURNING 을 받는다 (멱등).
+    //
+    // DO UPDATE SET from_node_id = EXCLUDED.from_node_id 는 RETURNING 을 받기 위한
+    // no-op 갱신. DO NOTHING + 별도 SELECT 보다 round-trip 1회 더 절약.
     const rows = await this.store.query<ConnectionRow>(
       `INSERT INTO workflow_connections (user_id, from_node_id, to_node_id, from_anchor, to_anchor)
        VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT ON CONSTRAINT uq_workflow_connections_user_edge_anchor
+       DO UPDATE SET from_node_id = EXCLUDED.from_node_id
        RETURNING id, from_node_id, to_node_id, from_anchor, to_anchor`,
       [userId, payload.from, payload.to, payload.fromAnchor, payload.toAnchor],
     );

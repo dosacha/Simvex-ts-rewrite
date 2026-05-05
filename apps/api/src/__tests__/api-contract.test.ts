@@ -253,6 +253,54 @@ test("workflow API: 사용자 소유권과 CRUD 계약을 유지함", async (t) 
   assert.equal(remaining.connections.length, 0, "nodeA 를 가리키던 connection 도 동반 삭제되어야 함");
 });
 
+test("workflow connection 멱등성: 동일 (from,to,anchor) 페어를 두 번 POST 해도 같은 id 반환", async (t) => {
+  // 회귀 케이스 — 이전엔 SELECT-then-INSERT 사이의 race 로 동시 요청 시 23505 가 400 으로 새어나갔음.
+  // ON CONFLICT 적용 후로는 같은 페어 재요청이 항상 같은 id 의 멱등 응답으로 떨어져야 함.
+  const fixtureDir = createImportFixture();
+  setCatalogImportDir(fixtureDir);
+
+  const app = await buildServer();
+  t.after(() => app.close());
+
+  const ownerId = makeUserId("wf-idem");
+
+  const nodeA = (await app.inject({
+    method: "POST",
+    url: "/api/v2/workflow/nodes",
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
+    payload: { title: "A", content: "A", x: 0, y: 0 },
+  })).json() as { id: number };
+
+  const nodeB = (await app.inject({
+    method: "POST",
+    url: "/api/v2/workflow/nodes",
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
+    payload: { title: "B", content: "B", x: 1, y: 1 },
+  })).json() as { id: number };
+
+  const connPayload = { from: nodeA.id, to: nodeB.id, fromAnchor: "right", toAnchor: "left" };
+  const headers = { ...bearer(app, ownerId), "content-type": "application/json" };
+
+  const c1 = await app.inject({ method: "POST", url: "/api/v2/workflow/connections", headers, payload: connPayload });
+  const c2 = await app.inject({ method: "POST", url: "/api/v2/workflow/connections", headers, payload: connPayload });
+
+  assert.equal(c1.statusCode, 201, "첫 요청은 정상 생성");
+  assert.equal(c2.statusCode, 201, "재요청도 200/201 (400 으로 새지 않아야 함)");
+
+  const id1 = (c1.json() as { id: number }).id;
+  const id2 = (c2.json() as { id: number }).id;
+  assert.equal(id1, id2, "같은 페어는 같은 connection id 를 반환 (멱등)");
+
+  // 실제로 connection 이 한 개만 남아있는지 list 로 검증.
+  const listed = await app.inject({
+    method: "GET",
+    url: "/api/v2/workflow",
+    headers: { ...bearer(app, ownerId), "content-type": "application/json" },
+  });
+  const wf = listed.json() as { connections: unknown[] };
+  assert.equal(wf.connections.length, 1, "중복 connection 이 만들어지지 않았어야 함");
+});
+
 test("POST /api/ai/ask: 내부 오류 발생 시 마스킹된 에러를 반환함", async (t) => {
   const fixtureDir = createImportFixture();
   setCatalogImportDir(fixtureDir);
