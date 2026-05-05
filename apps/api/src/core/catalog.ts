@@ -31,6 +31,19 @@ interface RawQuizItem {
 }
 
 interface RawImportFile {
+  /**
+   * 명시적 model_id — 이 카탈로그가 DB 에 박히는 안정 키.
+   *
+   * 의도: 파일 정렬 순서 기반 ID 부여는 새 모델 한 개만 추가해도 기존 ID 가 한 칸씩
+   * 밀려 memos.model_id / ai_histories.model_id 가 다른 모델을 가리키게 된다.
+   * 이를 막기 위해 import 파일이 자신의 ID 를 명시적으로 선언하도록 한다.
+   *
+   * 운영 규칙:
+   *   - 신규 import 파일은 반드시 양의 정수 model_id 를 명시.
+   *   - 한 번 부여한 ID 는 절대 다른 모델로 재사용하지 않는다.
+   *   - 미명시 시 buildStore 가 fallback 으로 파일 정렬 순서 ID 를 부여하지만 warning 을 출력.
+   */
+  model_id?: number;
   integrated_file?: string;
   description?: string;
   assets?: RawAssetItem[];
@@ -114,13 +127,46 @@ function buildStore(): CatalogStore {
   const quizzesByModelId = new Map<number, QuizItem[]>();
   const answerByQuizId = new Map<number, number>();
 
-  let modelId = 1;
+  // partId / quizId 는 catalog 내부에서만 쓰이고 DB 에 박히지 않는다.
+  // 따라서 파일 추가/삭제로 인한 drift 가 같은 시험 세션 안에서만 영향을 주고,
+  // 영구 데이터 정합성에는 영향을 주지 않는다 (memos / ai_histories 는 model_id 만 참조).
   let partId = 1;
   let quizId = 1;
+
+  // model_id 가 미명시인 파일에 fallback 부여할 때 사용하는 카운터.
+  // 명시된 ID 와 충돌하지 않도록 max(명시된 ID) + 1 부터 시작 — 아래 1차 패스에서 계산.
+  const explicitIds = new Set<number>();
+  for (const fileName of files) {
+    const filePath = path.join(importDir, fileName);
+    const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as RawImportFile;
+    if (typeof raw.model_id === "number" && Number.isInteger(raw.model_id) && raw.model_id > 0) {
+      if (explicitIds.has(raw.model_id)) {
+        throw new Error(
+          `[catalog] model_id 중복: ${raw.model_id} 가 둘 이상의 import 파일에 선언됨 (${fileName} 포함). 운영 규칙: ID 는 절대 재사용 금지.`,
+        );
+      }
+      explicitIds.add(raw.model_id);
+    }
+  }
+  let fallbackModelId = explicitIds.size > 0 ? Math.max(...explicitIds) + 1 : 1;
 
   for (const fileName of files) {
     const filePath = path.join(importDir, fileName);
     const raw = JSON.parse(fs.readFileSync(filePath, "utf-8")) as RawImportFile;
+
+    // 1. 명시된 model_id 우선 (운영 규칙: 신규 import 파일은 반드시 명시).
+    // 2. 미명시 시 fallback — 기존 명시 ID 와 충돌 없는 다음 정수.
+    //    경고 출력으로 운영자가 누락을 인지할 수 있게 함.
+    let modelId: number;
+    if (typeof raw.model_id === "number" && Number.isInteger(raw.model_id) && raw.model_id > 0) {
+      modelId = raw.model_id;
+    } else {
+      modelId = fallbackModelId++;
+      console.warn(
+        `[catalog] ${fileName}: model_id 미명시. fallback ID ${modelId} 부여. ` +
+          "운영 규칙 위반이며, 파일 추가/삭제 시 drift 위험. 명시적 model_id 추가 필요.",
+      );
+    }
 
     const title = deriveModelTitle(fileName, raw.integrated_file);
     const integratedFile = raw.integrated_file ?? `${title}.glb`;
@@ -201,7 +247,7 @@ function buildStore(): CatalogStore {
 
     partsByModelId.set(modelId, parts);
     quizzesByModelId.set(modelId, quizzes);
-    modelId += 1;
+    // modelId 는 파일별 명시 또는 fallback 으로 결정되므로 loop 안에서 ++ 하지 않는다.
   }
 
   return { models, partsByModelId, quizzesByModelId, answerByQuizId };
