@@ -1,12 +1,12 @@
 # 프로젝트 상태
 
-기준일: 2026-05-04 (JWT 인증 도입 시점)
+기준일: 2026-05-04 (JWT 검증 도입 시점)
 
 ## 코드 상태
 - 1·2·3·4단계 리팩토링 완료 (외부 코드 리뷰 P0/P1/P2 해결)
 - 5단계 narrative cleanup 완료 (외부 부정 분석 종합, P0 6항목)
 - 6단계 multipart 보안 fix + 문서 정합성 회복 완료
-- **JWT 인증 도입 완료** - `X-User-ID` 헤더 인증 제거, `Authorization: Bearer <token>` 으로 전환
+- **JWT 검증 도입 완료** - `X-User-ID` 헤더 인증 제거, `Authorization: Bearer <token>` 으로 전환
 
 > 단계의 정의는 `README.md` 의 "리팩토링 단계 정의" 섹션 참고.
 
@@ -39,7 +39,7 @@
 - 도메인 폴더 구조를 4-layer 위치로 정리 (`refactor(structure)`, commit `311029d`)
 - 문서 정합성 회복 - 코드와 narrative 간 마지막 불일치 제거
 
-## JWT 인증 도입 (2026-05-04 완료)
+## JWT 검증 도입 (2026-05-04 완료)
 - `X-User-ID` 헤더 인증 제거 (commit `4f4f8c8`)
 - `Authorization: Bearer <token>` (HS256) + `@fastify/jwt` 서명 검증
 - secret 길이 검증 (최소 32자)
@@ -53,7 +53,7 @@
 - 정식 login / 회원가입 (bcrypt) + refresh token rotation
 
 ## 종료 기준
-1. v2 API path 와 JWT 인증 기준으로 legacy-ui 또는 신규 SPA 연결
+1. v2 API path 와 JWT 검증 기준으로 legacy-ui 또는 신규 SPA 연결
 2. `typecheck`, `test:unit`, `test:postgres`, `migrate:validate` 통과
 3. OpenAI 오류 마스킹 정책 검증
 4. 정식 login / 회원가입 흐름 backlog 범위 확정
